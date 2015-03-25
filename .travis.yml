@@ -77,12 +77,11 @@ script:
   - drush cook fad --y
 
   # now that it's in place, lets run some automated testing
-  #- cd $HOME
-  #- cd ../client
-  #- npm install
-  #- bower install
-  #- cp config.travis.json config.json
-  #- grunt serve > ~/grunt.log 2>&1 &
+  - cd ../client
+  - npm install
+  - bower install
+  - cp config.travis.json config.json
+  - grunt serve > ~/grunt.log 2>&1 &
 
   # Run selenium.
   - wget http://selenium-release.storage.googleapis.com/2.44/selenium-server-standalone-2.44.0.jar
