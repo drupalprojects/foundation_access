@@ -1,9 +1,7 @@
 <?php
-  /**
-   * CIS LMS-less template file
-   *
-   *
-   */
+/**
+ * CIS LMS-less template file
+ */
 ?>
 <!-- Ecosystem Top Nav ---------------------------------------- -->
 <div id="etb-course-nav" class="row full collapse">
@@ -39,7 +37,7 @@
         </ul>
         <!-- Eco Nav Modals ---------------------------------------- -->
         <div id="apps-nav-modal" class="reveal-modal etb-nav-modal" data-reveal>
-            <h1>SING 101</h1>
+            <h1><?php print $site_name; ?></h1>
               <hr></hr>
               <h2>Services</h2>
               <?php foreach ($services as $service) : ?>
@@ -99,15 +97,16 @@
 
             <h1>Account</h1>
               <hr class="pad-1"></hr>
-                <a class="account-logout text-center row" href="#">log out</a>
+                <a class="account-logout text-center row" href="<?php print base_path();?>user/logout">log out</a>
               <hr></hr>
               <h2>Profile</h2>
               <a href="#" class="modal-img-link row">
                 <div class="left">
-                  <img alt="placeholder image" src="http://placehold.it/100x100">
+                  <img alt="placeholder image" src="https://placehold.it/100x100">
                 </div>
-                <span>User's Name</span>
+                <span><?php print $username; ?></span>
               </a>
+              <!--
                <a href="#" class="etb-modal-icon grades-icon row">
                 <div class="icon-grades-black etb-modal-icons "></div>
                 <span class="">Grades</span>
@@ -121,7 +120,7 @@
               <a href="#" class="etb-modal-icon access-icon row">
                 <div class="icon-access-black etb-modal-icons"></div>
                 <span>Accessibility</span>
-              </a>
+              </a> -->
             <a class="close-reveal-modal">&#215;</a>
          </div>
 
@@ -132,9 +131,9 @@
               <h2><?php print t('Instructor'); ?></h2>
               <a href="#" class="modal-img-link row">
                 <div class="left">
-                  <img alt="placeholder image" src="http://placehold.it/100x100">
+                  <img alt="placeholder image" src="https://placehold.it/100x100">
                 </div>
-                <span class="">Professor Snape</span>
+                <span class="">Instructor Name</span>
               </a>
               <!--<hr></hr>
                <h2><?php print t('My Section'); ?></h2>
