@@ -25,11 +25,15 @@
  * @see template_process()
  */
 ?>
-<aside class="left-off-canvas-menu">
-  <a role="button" class="left-off-canvas-toggle close"><div class="icon-close-white outline-nav-icon" data-grunticon-embed></div></a>
-  <div class="in-place-scroll">
-    <?php if ($content): ?>
-      <?php print $content; ?>
-    <?php endif; ?>
+<aside class="left-off-canvas-menu" data-offcanvas>
+  <!-- Menu Item Dropdowns -->
+  <?php if (isset($button_group)): ?>
+    <?php print $button_group; ?>
+  <?php endif; ?>
+  <a role="button" class="left-off-canvas-toggle close"><div class="icon-close-black outline-nav-icon" data-grunticon-embed></div></a>
+  <div class="content-outline-navigation in-place-scroll">
+  <?php if ($content): ?>
+    <?php print $content; ?>
+  <?php endif; ?>
   </div>
 </aside>
