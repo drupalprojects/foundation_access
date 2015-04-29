@@ -13,12 +13,20 @@
 ?>
     <div id="etb-tool-nav" class="off-canvas-wrap" data-offcanvas>
       <div class="inner-wrap">
+         <!-- Admin Status Bar -->
+         <div class="row full admin-status-bar">
+            <div class="columns small-12">
+            <?php foreach($cis_lmsless['admin_status_bar'] as $admin_status_msg_key => $admin_status_msg) : ?>
+            <span class="<?php print $admin_status_msg_key;?>-label"><?php print $admin_status_msg[0];?>: </span>
+            <span class="<?php print $admin_status_msg_key;?>"><?php print $admin_status_msg[1];?></span>
+            <?php endforeach ?>
+            </div>
+          </div>
         <!-- progress bar -->
           <div class="page-scroll progress">
             <span class="meter" style="width: 0%"></span>
           </div>
-
-                <nav class="tab-bar etb-tool">
+          <nav class="tab-bar etb-tool">
           <section class="left">
             <a class="left-off-canvas-toggle menu-icon" ><span><?php print $cis_lmsless['active']['title'] ?></span></a>
           </section>
@@ -27,13 +35,14 @@
               <a class="off-canvas-toolbar-item toolbar-menu-icon" href="#" data-dropdown="middle-section-buttons" aria-controls="middle-section-buttons" aria-expanded="false"><div class="icon-chevron-down-black off-canvas-toolbar-item-icon"></div></a>
 
           </section>
-
+          <?php print render($page['cis_appbar_second']); ?>
+          <?php if (isset($speedreader) || isset($mespeak)) : ?>
           <section class="right-small">
             <a href="#" class="off-canvas-toolbar-item access-icon" data-reveal-id="page-tools-menu" aria-controls="accessibility-drop" aria-expanded="false">
               <div class="icon-access-black off-canvas-toolbar-item-icon"></div>
             </a>
-            <?php print render($page['cis_appbar_second']); ?>
           </section>
+          <?php endif; ?>
           <!-- Modal -->
           <?php if (isset($speedreader) || isset($mespeak)) : ?>
           <div id="page-tools-menu" class="reveal-modal" data-reveal aria-labelledby="Accessibility" aria-hidden="true" role="dialog">
