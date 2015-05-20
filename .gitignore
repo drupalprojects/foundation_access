@@ -5,5 +5,5 @@ robots.txt
 node_modules
 .bin
 bower_components
-
+**/_notes/dwsync.xml
 sftp-config.json

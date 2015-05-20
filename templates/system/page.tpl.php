@@ -1,34 +1,96 @@
-<!-- ---------------------------------------- -->
+<?php
+/**
+ * @file
+ * Default theme implementation to display a region.
+ *
+ * @see template_preprocess()
+ * @see template_preprocess_page()
+ * @see template_process()
+ */
+  if (!isset($cis_lmsless['active'])) {
+    $cis_lmsless['active']['title'] = '';
+  }
+?>
     <div id="etb-tool-nav" class="off-canvas-wrap" data-offcanvas>
       <div class="inner-wrap">
-                <nav class="tab-bar etb-tool">
+        <?php if (isset($cis_lmsless['admin_status_bar']) && !empty($cis_lmsless['admin_status_bar'])) : ?>
+         <!-- Admin Status Bar -->
+         <div class="row full admin-status-bar divider-bottom">
+            <div class="columns small-12">
+            <?php foreach($cis_lmsless['admin_status_bar'] as $admin_status_msg_key => $admin_status_msg) : ?>
+            <span class="<?php print $admin_status_msg_key;?>-label"><?php print $admin_status_msg[0];?>: </span>
+            <span class="<?php print $admin_status_msg_key;?>"><?php print $admin_status_msg[1];?></span>
+            <?php endforeach ?>
+            </div>
+          </div>
+        <?php endif; ?>
+        <!-- progress bar -->
+          <div class="page-scroll progress">
+            <span class="meter" style="width: 0%"></span>
+          </div>
+          <nav class="tab-bar etb-tool">
           <section class="left">
-            <a class="left-off-canvas-toggle menu-icon" ><span>Outline</span></a>
+            <a href="#" class="left-off-canvas-toggle menu-icon" ><span><?php print $cis_lmsless['active']['title'] ?></span></a>
           </section>
 
           <section class="middle tab-bar-section">
-            <!-- <h1 class="title">Tools will go here soon</h1> -->
+          <?php if (!empty($tabs['#primary']) || !empty($tabs['#secondary']) || !empty($tabs_extras)): ?>
+              <li class="toolbar-menu-icon"><a href="#" class="off-canvas-toolbar-item toolbar-menu-icon" data-dropdown="middle-section-buttons" aria-controls="middle-section-buttons" aria-expanded="false">
+                <div class="icon-chevron-down-black off-canvas-toolbar-item-icon"></div>
+              </a></li>
+              <li class="toolbar-menu-icon divider-left"><a href="#" class="off-canvas-toolbar-item toolbar-menu-icon" data-reveal-id="page-tools-menu" aria-controls="accessibility-drop" aria-expanded="false">
+                <div class="icon-access-black off-canvas-toolbar-item-icon"></div>
+              </a></li>
+          <?php endif; ?>
           </section>
-
-          <section class="right-small">
-            <a href="#" class="off-canvas-toolbar-item access-icon" data-dropdown="accessibility-drop" aria-controls="accessibility-drop" aria-expanded="false">
-                <div class="icon-access-white off-canvas-toolbar-item-icon"></div>
-                <!-- <span>Accessibilty</span> -->
-              </a>
-          </section>
-          <!-- accessibility dropdown -->
-          <div id="accessibility-drop" data-dropdown-content class="f-dropdown content large" aria-hidden="true" tabindex="-1">
-             <div class="switch small radius">
-              <input id="enable-page-reader-switch" type="checkbox">
-              <label for="enable-page-reader-switch"></label>
-             </div>
-            </div>
+          <?php print render($page['cis_appbar_second']); ?>
+          <?php if (isset($speedreader) || isset($mespeak)) : ?>
+          <!-- <section class="right-small">
+            
+          </section> -->
+          <?php endif; ?>
+          <!-- Modal -->
+          <?php if (isset($speedreader) || isset($mespeak)) : ?>
+          <div id="page-tools-menu" class="reveal-modal" data-reveal aria-labelledby="Accessibility" aria-hidden="true" role="dialog">
+            <h2 id="Accessibility"><?php print t('Accessibility') ?></h2>
+             <?php if (isset($speedreader)) : ?>
+            <a href="#" class="off-canvas-toolbar-item access-icon" data-reveal-id="block-speedreader-speedreader-block-nav-modal" aria-controls="accessibility-drop" aria-expanded="false"><?php print t('Speed reader'); ?></a>
+            <?php endif; ?>
+            <?php if (isset($mespeak)) : ?>
+            <a href="#" class="off-canvas-toolbar-item access-icon" data-reveal-id="block-mespeak-mespeak-block-nav-modal" aria-controls="accessibility-drop" aria-expanded="false"><?php print t('Speak page'); ?></a>
+            <?php endif; ?>
+          </div>
+          <?php endif; ?>
             <!-- /accessibility dropdown -->
         </nav>
+
+        <!-- Middle Section Dropdown Page Tabs -->
+        <?php if (!empty($tabs['#primary']) || !empty($tabs['#secondary']) || !empty($tabs_extras)): ?>
+        <div id="middle-section-buttons" data-dropdown-content class="f-dropdown content" aria-hidden="true" tabindex="-1">
+          <?php if (!empty($tabs)): ?>
+              <?php print render($tabs); ?>
+            <?php if (!empty($tabs2)): print render($tabs2); endif; ?>
+          <?php endif; ?>
+          <?php if ($action_links): ?>
+              <?php print render($action_links); ?>
+          <?php endif; ?>
+          <?php if (isset($tabs_extras)): ksort($tabs_extras); ?>
+           <?php foreach ($tabs_extras as $group) : ?>
+            <?php foreach ($group as $button) : ?>
+              <li><?php print $button; ?></li>
+            <?php endforeach; ?>
+           <?php endforeach; ?>
+          <?php endif; ?>
+        </div>
+      <?php endif; ?>
+
+        <?php print render($page['cis_appbar_first']); ?>
 
         <?php print render($page['left_menu']); ?>
 
         <section class="main-section etb-book">
+
+
           <?php if (!empty($page['header'])): ?>
             <div class="region-header row">
               <?php print render($page['header']); ?>
@@ -56,65 +118,52 @@
                       <?php print render($page['highlighted']); ?>
                     </div>
                   <?php endif; ?>
-
                   <a id="main-content"></a>
-
-                  <?php if ($breadcrumb): print $breadcrumb; endif; ?>
-
+                  <?php if ($breadcrumb) : ?>
+                    <div class="breadcrumb-wrapper">
+                    <?php print $breadcrumb; ?>
+                    </div>
+                  <?php endif; ?>
                   <?php if ($title): ?>
                     <?php print render($title_prefix); ?>
                       <h1 id="page-title" class="title"><?php print $title; ?>
-                        <br><small>This is my course. It's awesome.</small>
+                        <br><small><!--This is my course subtitle.--></small>
                       </h1>
-                      <hr>
                     <?php print render($title_suffix); ?>
                   <?php endif; ?>
-
-                  <?php if (!empty($tabs)): ?>
-                    <?php print render($tabs); ?>
-                    <?php if (!empty($tabs2)): print render($tabs2); endif; ?>
-                  <?php endif; ?>
-
-                  <?php if ($action_links): ?>
-                    <ul class="action-links">
-                      <?php print render($action_links); ?>
-                    </ul>
-                  <?php endif; ?>
-
                   <?php print render($page['content']); ?>
                 </div>
               </div>
             </div>
           </div>
-
-          <footer class="row">
-            <div class="large-12 columns">
-              <div class="region-footer row">
-                <div class="large-6 columns">
-                  <?php print render($page['footer']); ?>
-                </div>
-              </div>
-
-              <hr/>
-              <div class="row">
-                <div class="large-6 columns">
-                  <p>© Copyright no one at all. Go to town.</p>
-                </div>
-                <div class="large-6 columns">
-                  <ul class="inline-list right">
-                    <li><a href="#">Link 1</a></li>
-                    <li><a href="#">Link 2</a></li>
-                    <li><a href="#">Link 3</a></li>
-                    <li><a href="#">Link 4</a></li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-          </footer>
-
         </section>
 
       <a class="exit-off-canvas"></a>
-
       </div>
     </div>
+    <footer class="sticky-footer">
+      <div class="row">
+        <div class="small-12 medium-push-1 medium-10 columns">
+          <?php if (!empty($page['footer'])): ?>
+          <?php print render($page['footer']); ?>
+          <?php endif; ?>
+        </div>
+        <?php if (!empty($page['footer_firstcolumn']) || !empty($page['footer_secondcolumn'])): ?>
+        <hr/>
+        <div class="row">
+          <?php if (!empty($page['footer_firstcolumn'])): ?>
+          <div class="large-6 columns">
+            <?php print render($page['footer_firstcolumn']); ?>
+          </div>
+          <?php endif; ?>
+          <?php if (!empty($page['footer_secondcolumn'])): ?>
+          <div class="large-6 columns">
+            <?php print render($page['footer_secondcolumn']); ?>
+          </div>
+          <?php endif; ?>
+        </div>
+        <?php endif; ?>
+      </div>
+    </footer>
+<!-- generic container for other off canvas modals -->
+<?php print render($page['cis_appbar_modal']); ?>
