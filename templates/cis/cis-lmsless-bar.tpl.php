@@ -3,7 +3,7 @@
  * CIS LMS-less template file
  */
 ?>
-<!-- Ecosystem Top Nav ---------------------------------------- -->
+<!-- Ecosystem Top Nav -->
 <div id="etb-course-nav" class="row full collapse">
   <div class="columns small-12 medium-6">
     <nav class="top-bar etb-nav middle-align-wrap etb-nav--center--parent" data-options="is_hover: false" data-topbar role="navigation">
@@ -14,7 +14,6 @@
           <li class="apps">
             <a href="#" class="etb-nav_item_service_btn etb-icon apps-icon middle-align-wrap" data-reveal-id="apps-nav-modal">
               <div class="icon-apps-black etb-icons svg"></div>
-              <!-- <div class="message-alert middle-align-wrap"><span>1</span></div> -->
             </a>
           </li>
           <?php endif; ?>
@@ -42,24 +41,12 @@
             </a>
           </li>
           <?php endif; ?>
-          <li class="mini-alerts show-for-large-up flex-vertical-right">
-            <?php foreach($admin_status_bar as $admin_status_msg_key => $admin_status_msg) : ?>
-            <span class="<?php print $admin_status_msg_key;?>"><?php print $admin_status_msg;?></span>
-            <?php endforeach ?>
-          </li>
         </ul>
-        <!-- Eco Nav Modals ---------------------------------------- -->
-
+        <!-- Eco Nav Modals -->
         <div id="apps-nav-modal" class="reveal-modal etb-nav-modal disable-scroll" data-reveal>
-
-
-
             <h1><?php print $site_name; ?></h1>
               <?php if (isset($service_option_link)) : ?>
                 <div class="minimal-edit-buttons in-modal">
-                <!-- <a href="#" class="off-canvas-toolbar-item toolbar-menu-icon" data-dropdown="eco-services-add-menu-1" aria-controls="add-button" aria-expanded="false">
-                  <div class="icon-plus-black off-canvas-toolbar-item-icon"></div>
-                </a> -->
                 <a class="off-canvas-toolbar-item toolbar-menu-icon" href="#" data-dropdown="eco-services-edit-menu-1" aria-controls="offcanvas-admin-menu" aria-expanded="false">
                   <div class="icon-chevron-down-black off-canvas-toolbar-item-icon"></div>
                 </a>
@@ -67,8 +54,7 @@
               <!-- Menu Item Dropdowns -->
               <div id="eco-services-edit-menu-1" data-dropdown-content class="f-dropdown content" aria-hidden="true" tabindex="-1">
                 <ul class="button-group">
-                  <li><?php print l(t('Add another service'), $service_option_link); ?></li>
-                  <li><?php print l(t('Edit services'), $service_option_link); ?></li>
+                  <li><?php print l(t('Add services'), $service_option_link); ?></li>
                 </ul>
               </div>
               <?php endif; ?>
@@ -83,90 +69,22 @@
                 </a>
                 <?php endforeach ?>
               <?php endforeach ?>
-              <!--
-              <a href="#" class="etb-modal-icon calendar-icon row">
-                <div class="icon-calendar-black etb-modal-icons"></div>
-                <span class="">Calendar</span>
-              </a>
-              <a href="#" class="etb-modal-icon assignments-icon row">
-                <div class="icon-assignments-black etb-modal-icons"></div>
-                <span class="">Assignments</span>
-              </a>
-              <a href="#" class="etb-modal-icon people-icon row">
-                <div class="icon-people-black etb-modal-icons "></div>
-                <span class="">People</span>
-              </a>
-              <hr></hr>
-              <h2>Communicate</h2>
-              <a href="#" class=" etb-modal-icon inbox-icon row">
-                <div class="icon-inbox-black etb-modal-icons"></div>
-                <span>Inbox</span>
-              </a>
-              <a href="#" class=" etb-modal-icon write-icon row">
-                <div class="icon-write-black etb-modal-icons"></div>
-                <span>Blog</span>
-              </a>
-              <hr></hr>
-              <a href="#" class=" etb-modal-icon beaker-icon row">
-                <div class="icon-beaker-black etb-modal-icons"></div>
-                <span>Labs</span>
-              </a>
-              <a href="#" class=" etb-modal-icon collab-icon row">
-                <div class="icon-collab-black etb-modal-icons"></div>
-                <span>Peer Collaboration</span>
-              </a>
-            -->
             <a class="close-reveal-modal">&#215;</a>
          </div>
          <div id="user-nav-modal" class="reveal-modal etb-nav-modal disable-scroll" data-reveal>
-          <!-- Center Search Section -->
-
             <h1><?php print t('Account'); ?></h1>
-              <hr class="pad-1"></hr>
+              <hr class="pad-1" />
                 <?php print $userlink; ?>
-              <hr></hr>
-              <div class="minimal-edit-buttons in-modal">
-                <a class="off-canvas-toolbar-item toolbar-menu-icon" href="#" data-dropdown="eco-account-edit-menu-1" aria-controls="offcanvas-admin-menu" aria-expanded="false">
-                  <div class="icon-chevron-down-black off-canvas-toolbar-item-icon"></div>
-                </a>
-              </div>
-              <!-- Menu Item Dropdowns -->
-
-              <div id="eco-account-edit-menu-1" data-dropdown-content class="f-dropdown content" aria-hidden="true" tabindex="-1">
-                <ul class="button-group">
-                  <li><a href="#" data-reveal-id="block-masquerade-masquerade-nav-modal"><?php print t('Impersonate a user'); ?></a></li>
-                </ul>
-              </div>
-              <!-- End Menu Item Dropdowns -->
+              <hr />
+              <?php if (!empty($username)) : ?>
               <h2><?php print t('Profile'); ?></h2>
-                <!--<div class="left">
-                     TODO PUT IMAGE HERE
-                </div> -->
-                <span><?php print $username; ?></span>
-              <!--
-               <a href="#" class="etb-modal-icon grades-icon row">
-                <div class="icon-grades-black etb-modal-icons "></div>
-                <span class="">Grades</span>
-              </a>
-              <a href="#" class="etb-modal-icon bookmark-outline-icon row">
-                <div class="icon-bookmark-outline-black etb-modal-icons "></div>
-                <span class="">Bookmarks</span>
-              </a>-->
+              <span><?php print $username; ?></span>
+              <?php endif; ?>
             <a class="close-reveal-modal">&#215;</a>
          </div>
 
          <div id="info-nav-modal" class="reveal-modal etb-nav-modal disable-scroll" data-reveal>
             <h1><?php print t('Syllabus'); ?></h1>
-              <hr></hr>
-              <!-- End Menu Item Dropdowns -->
-              <!-- <h2><?php print t('Instructor'); ?></h2>
-              <a href="#" class="modal-img-link row">
-                <div class="left">
-                  <?php //@todo ADD ICON HERE ?>
-                  <?php //@todo  ADD INSTRUCTOR NAME HERE FROM CIS PULL ?>
-                </div>
-                <span class=""><?php print t('Instructor Name'); ?></span>
-              </a> -->
               <hr></hr>
               <div class="minimal-edit-buttons in-modal">
                 <a class="off-canvas-toolbar-item toolbar-menu-icon" href="#" data-dropdown="eco-syllabus-edit-menu-2" aria-controls="offcanvas-admin-menu" aria-expanded="false">
@@ -223,14 +141,9 @@
               </a>
             <a class="close-reveal-modal">&#215;</a>
          </div>
-
-
         </section>
       </nav>
     </div>
-   <!--  <div class="hide-for-small-only medium-3 columns">
-      <?php print render($search); ?>
-    </div> -->
     <div class="etb-title small-12 medium-6 columns">
       <nav class="top-bar etb-nav flex-vertical-right center-align-wrap" data-options="is_hover: false" data-topbar role="navigation">
        <section class="top-bar-section title-link">
