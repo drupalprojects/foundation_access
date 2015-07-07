@@ -6,8 +6,25 @@
  *
  */
 function foundation_access_preprocess_html(&$variables) {
+  // theme path shorthand should be handled here
+  $variables['theme_path'] = base_path() . drupal_get_path('theme', 'foundation_access');
   foreach($variables['user']->roles as $role){
     $variables['classes_array'][] = 'role-' . drupal_html_class($role);
+  }
+  // add page level variables into scope for the html tpl file
+  $variables['site_name'] = check_plain(variable_get('site_name', 'ELMSLN'));
+  $variables['logo'] = theme_get_setting('logo');
+  $variables['logo_img'] = '';
+  // make sure we have a logo before trying to render a real one to screen
+  if (!empty($variables['logo'])) {
+    $variables['logo_img'] = l(theme('image', array(
+      'path' => $variables['logo'],
+      'alt' => strip_tags($variables['site_name']) . ' ' . t('logo'),
+      'title' => strip_tags($variables['site_name']) . ' ' . t('Home'),
+      'attributes' => array(
+        'class' => array('logo'),
+      ),
+    )), '<front>', array('html' => TRUE));
   }
 }
 
@@ -56,6 +73,12 @@ function foundation_access_menu_tree__menu_course_tools_menu($variables) {
 function _foundation_access_single_menu_link($element) {
   $options = $element['#localized_options'];
   $options['html'] = TRUE;
+  // ensure class array is at least set
+  if (empty($element['#attributes']['class'])) {
+    $element['#attributes']['class'] = array();
+  }
+  $classes = implode(' ', $element['#attributes']['class']);
+  $options['attributes']['class'] = $element['#attributes']['class'];
   // default is a page icon
   $icon = 'page';
   // allow for modification of the item
@@ -234,5 +257,31 @@ function foundation_access_html_head_alter(&$head_elements) {
         'href' => base_path() . drupal_get_path('theme', 'foundation_access') . '/css/app.css',
       ),
     );
+  }
+}
+
+/**
+ * Implements theme_breadrumb().
+ *
+ * Print breadcrumbs as a list, with separators.
+ */
+function foundation_access_breadcrumb($variables) {
+  $breadcrumb = $variables['breadcrumb'];
+
+  if (!empty($breadcrumb)) {
+    // Provide a navigational heading to give context for breadcrumb links to
+    // screen-reader users. Make the heading invisible with .element-invisible.
+    $breadcrumbs = '<h2 class="element-invisible">' . t('You are here') . '</h2>';
+
+    $breadcrumbs .= '<ul class="breadcrumbs">';
+    foreach ($breadcrumb as $key => $value) {
+      $breadcrumbs .= '<li>' . strip_tags(htmlspecialchars_decode($value), '<br><br/><a></a><span></span>') . '</li>';
+    }
+
+    $title = strip_tags(drupal_get_title());
+    $breadcrumbs .= '<li class="current"><a href="#">' . $title . '</a></li>';
+    $breadcrumbs .= '</ul>';
+
+    return $breadcrumbs;
   }
 }
