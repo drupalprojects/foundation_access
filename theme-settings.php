@@ -17,4 +17,43 @@ function foundation_access_form_system_theme_settings_alter(&$form, &$form_state
     '#description' => t('The name displayed at the top left to indicate to users what system they are using. Defaults to the one provided by the registry.'),
     '#default_value' => (empty($system) ? $reg['default_title'] : $system),
   );
+  // allow for jquery colorpicker selection widget
+  if (module_exists('jquery_colorpicker')) {
+    $fieldtype = 'jquery_colorpicker';
+  }
+  else {
+    $fieldtype = 'textfield';
+  }
+  $form['zurb_foundation']['foundation_access']['foundation_access_primary_color'] = array(
+    '#type' => $fieldtype,
+    '#size' => 6,
+    '#maxlength' => 6,
+    '#title' => t('Primary Color'),
+    '#description' => t('Primary color to apply throughout the system'),
+    '#default_value' => theme_get_setting('foundation_access_primary_color'),
+  );
+  $form['zurb_foundation']['foundation_access']['foundation_access_secondary_color'] = array(
+    '#type' => $fieldtype,
+    '#size' => 6,
+    '#maxlength' => 6,
+    '#title' => t('Secondary Color'),
+    '#description' => t('A Secondary color to apply throughout the system'),
+    '#default_value' => theme_get_setting('foundation_access_secondary_color'),
+  );
+  $form['zurb_foundation']['foundation_access']['foundation_access_required_color'] = array(
+    '#type' => $fieldtype,
+    '#size' => 6,
+    '#maxlength' => 6,
+    '#title' => t('Required Color'),
+    '#description' => t('Tasks and lists that are required will pick up this color'),
+    '#default_value' => theme_get_setting('foundation_access_required_color'),
+  );
+  $form['zurb_foundation']['foundation_access']['foundation_access_optional_color'] = array(
+    '#type' => $fieldtype,
+    '#size' => 6,
+    '#maxlength' => 6,
+    '#title' => t('Optional Color'),
+    '#description' => t('Tasks and lists that are optional will pick up this color'),
+    '#default_value' => theme_get_setting('foundation_access_optional_color'),
+  );
 }

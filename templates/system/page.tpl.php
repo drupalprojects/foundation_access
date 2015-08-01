@@ -55,15 +55,30 @@
               <li class="toolbar-menu-icon"><a href="#" class="off-canvas-toolbar-item toolbar-menu-icon" data-dropdown="middle-section-buttons" aria-controls="middle-section-buttons" aria-expanded="false">
                 <div class="icon-chevron-down-black off-canvas-toolbar-item-icon"></div>
               </a></li>
-              <li class="toolbar-menu-icon divider-left"><a href="#" class="off-canvas-toolbar-item toolbar-menu-icon" data-reveal-id="page-tools-menu" aria-controls="accessibility-drop" aria-expanded="false">
-                <div class="icon-access-black off-canvas-toolbar-item-icon"></div>
-              </a></li>
+              <?php if (isset($cis_shortcodes)) : ?>
+                <li class="toolbar-menu-icon divider-left"><a href="#" class="off-canvas-toolbar-item toolbar-menu-icon" data-reveal-id="page-share-menu" aria-controls="cis-shortcodes-drop" aria-expanded="false">
+                  <div class="icon-collab-black off-canvas-toolbar-item-icon"></div>
+                </a></li>
+              <?php endif; ?>
+              <?php if (isset($speedreader) || isset($mespeak)) : ?>
+                <li class="toolbar-menu-icon divider-left"><a href="#" class="off-canvas-toolbar-item toolbar-menu-icon" data-reveal-id="page-accessibility-menu" aria-controls="accessibility-drop" aria-expanded="false">
+                  <div class="icon-access-black off-canvas-toolbar-item-icon"></div>
+                </a></li>
+              <?php endif; ?>
           <?php endif; ?>
           </section>
           <?php print render($page['cis_appbar_second']); ?>
-          <!-- Modal -->
+          <!-- Share Modal -->
+          <?php if (isset($cis_shortcodes)) : ?>
+          <div id="page-share-menu" class="reveal-modal" data-reveal aria-labelledby="Share" aria-hidden="true" role="dialog">
+            <h2 id="Share"><?php print t('Share') ?></h2>
+            <?php print $cis_shortcodes; ?>
+          </div>
+          <?php endif; ?>
+          <!-- /accessibility dropdown -->
+          <!-- Accessibility Modal -->
           <?php if (isset($speedreader) || isset($mespeak)) : ?>
-          <div id="page-tools-menu" class="reveal-modal" data-reveal aria-labelledby="Accessibility" aria-hidden="true" role="dialog">
+          <div id="page-accessibility-menu" class="reveal-modal" data-reveal aria-labelledby="Accessibility" aria-hidden="true" role="dialog">
             <h2 id="Accessibility"><?php print t('Accessibility') ?></h2>
              <?php if (isset($speedreader)) : ?>
             <a href="#" class="off-canvas-toolbar-item access-icon" data-reveal-id="block-speedreader-speedreader-block-nav-modal" aria-controls="accessibility-drop" aria-expanded="false"><?php print t('Speed reader'); ?></a>
@@ -73,7 +88,7 @@
             <?php endif; ?>
           </div>
           <?php endif; ?>
-            <!-- /accessibility dropdown -->
+          <!-- /accessibility dropdown -->
         </nav>
 
         <!-- Middle Section Dropdown Page Tabs -->
@@ -101,17 +116,21 @@
         <?php print render($page['left_menu']); ?>
 
         <section class="main-section etb-book">
+          <?php if (!empty($messages)): ?>
+            <div class="region-messeges row">
+              <?php print $messages; ?>
+            </div>
+          <?php endif; ?>
 
+          <?php if ($breadcrumb) : ?>
+            <div class="breadcrumb-wrapper">
+            <?php print $breadcrumb; ?>
+            </div>
+          <?php endif; ?>
 
           <?php if (!empty($page['header'])): ?>
             <div class="region-header row">
               <?php print render($page['header']); ?>
-            </div>
-          <?php endif; ?>
-
-          <?php if (!empty($messages)): ?>
-            <div class="region-messeges row">
-              <?php print $messages; ?>
             </div>
           <?php endif; ?>
 
@@ -131,16 +150,9 @@
                     </div>
                   <?php endif; ?>
                   <a id="main-content"></a>
-                  <?php if ($breadcrumb) : ?>
-                    <div class="breadcrumb-wrapper">
-                    <?php print $breadcrumb; ?>
-                    </div>
-                  <?php endif; ?>
                   <?php if ($title): ?>
                     <?php print render($title_prefix); ?>
-                      <h1 id="page-title" class="title"><?php print $title; ?>
-                        <br><small><!--This is my course subtitle.--></small>
-                      </h1>
+                      <h1 id="page-title" class="title"><?php print $title; ?></h1>
                     <?php print render($title_suffix); ?>
                   <?php endif; ?>
                   <?php print render($page['content']); ?>

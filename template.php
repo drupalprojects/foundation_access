@@ -6,6 +6,34 @@
  *
  */
 function foundation_access_preprocess_html(&$variables) {
+  // loop through our system specific colors
+  $colors = array('primary', 'secondary', 'required', 'optional');
+  $css = '';
+  foreach ($colors as $current) {
+    $color = theme_get_setting('foundation_access_' . $current . '_color');
+    // see if we have something that could be valid hex
+    if (strlen($color) == 6 || strlen($color) == 3) {
+      $color = '#' . $color;
+      $css .= '.foundation_access-' . $current . '_color{color:$color;}';
+      // specialized additions for each wheel value
+      switch ($current) {
+        case 'primary':
+          $css .= ".etb-book h1,.etb-book h2 {color: $color !important;}";
+        break;
+        case 'secondary':
+          $css .= ".etb-book h3,.etb-book h4,.etb-book h5 {color: $color !important;}";
+        break;
+        case 'required':
+          $css .= "div.textbook_box_required li:hover:before{border-color: $color !important;} div.textbook_box_required li:before {background: $color !important;} div.textbook_box_required { border: 2px solid $color !important;} .textbook_box_required h3 {color: $color !important;}";
+        break;
+        case 'optional':
+          $css .= "div.textbook_box_optional li:hover:before{border-color: $color !important;} div.textbook_box_optional li:before {background: $color !important;} div.textbook_box_optional { border: 2px solid $color !important;} .textbook_box_optional h3 {color: $color !important;}";
+        break;
+      }
+    }
+  }
+  drupal_add_css($css, array('type' => 'inline'));
+  drupal_add_css('//fonts.googleapis.com/css?family=Droid+Serif:400,700,400italic,700italic|Open+Sans:300,600,700)', array('type' => 'external'));
   // theme path shorthand should be handled here
   $variables['theme_path'] = base_path() . drupal_get_path('theme', 'foundation_access');
   foreach($variables['user']->roles as $role){
@@ -37,7 +65,15 @@ function foundation_access_preprocess_page(&$variables) {
   if (module_exists('cis_lmsless')) {
     $variables['cis_lmsless'] = _cis_lmsless_theme_vars();
   }
-  if (_cis_connector_role_grouping('staff') || _cis_connector_role_grouping('teacher')) {
+  if (module_exists('cis_shortcodes')) {
+    $block = cis_shortcodes_block_view('cis_shortcodes_block');
+    if (!empty($block['content'])) {
+      $variables['cis_shortcodes'] = $block['content'];
+    }
+  }
+  // show staff / instructors the course tools menu
+  if (_cis_connector_role_groupings(array('staff','teacher'))) {
+    $variables['tabs_extras'][100][] = '<hr>';
     $variables['tabs_extras'][100][] = '<a href="#" data-reveal-id="block-menu-menu-course-tools-menu-nav-modal">' . t('Course Settings') . '</a>';
   }
   // wrap non-node content in an article tag
