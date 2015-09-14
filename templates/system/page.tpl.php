@@ -40,7 +40,7 @@
             <section class="left">
               <!-- If the off-canvas menu is in use, activate off canvas toggle -->
               <?php if (!empty($page['left_menu'])): ?>
-                <a class="left-off-canvas-toggle menu-icon" ><span><?php print $cis_lmsless['active']['title'] ?></span></a>
+                <a class="left-off-canvas-toggle open menu-icon" href="#"><span><?php print $cis_lmsless['active']['title'] ?></span></a>
               <?php else : ?>
                 <span><?php print $cis_lmsless['active']['title'] ?></span>
               <?php endif; ?>
@@ -55,7 +55,7 @@
               <li class="toolbar-menu-icon"><a href="#" class="off-canvas-toolbar-item toolbar-menu-icon" data-dropdown="middle-section-buttons" aria-controls="middle-section-buttons" aria-expanded="false">
                 <div class="icon-chevron-down-black off-canvas-toolbar-item-icon"></div>
               </a></li>
-              <?php if (isset($cis_shortcodes)) : ?>
+              <?php if (!empty($cis_shortcodes)) : ?>
                 <li class="toolbar-menu-icon divider-left"><a href="#" class="off-canvas-toolbar-item toolbar-menu-icon" data-reveal-id="page-share-menu" aria-controls="cis-shortcodes-drop" aria-expanded="false">
                   <div class="icon-collab-black off-canvas-toolbar-item-icon"></div>
                 </a></li>
@@ -73,6 +73,7 @@
           <div id="page-share-menu" class="reveal-modal" data-reveal aria-labelledby="Share" aria-hidden="true" role="dialog">
             <h2 id="Share"><?php print t('Share') ?></h2>
             <?php print $cis_shortcodes; ?>
+            <a class="close-reveal-modal">&#215;</a>
           </div>
           <?php endif; ?>
           <!-- /accessibility dropdown -->
@@ -86,6 +87,7 @@
             <?php if (isset($mespeak)) : ?>
             <a href="#" class="off-canvas-toolbar-item access-icon" data-reveal-id="block-mespeak-mespeak-block-nav-modal" aria-controls="accessibility-drop" aria-expanded="false"><?php print t('Speak page'); ?></a>
             <?php endif; ?>
+            <a class="close-reveal-modal">&#215;</a>
           </div>
           <?php endif; ?>
           <!-- /accessibility dropdown -->

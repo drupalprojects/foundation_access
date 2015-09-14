@@ -1,6 +1,26 @@
 <?php
 
 /**
+ * Implements hook_menu_link_alter().
+ *
+ * Allow Foundation Access to affect the menu links table
+ * so that we can allow other projects to store an icon
+ * representation of what we're working on or status information
+ * about it.
+ *
+ */
+function foundation_access_menu_link_alter(&$item) {
+  // this allows other projects to influence the icon seletion for menu items
+  $icon = 'page';
+  // #href proprety expected for use in the FA menu item icon
+  $item['#href'] = $item['link_path'];
+  // support for the primary theme used with MOOC platform
+  drupal_alter('foundation_access_menu_item_icon', $icon, $item);
+  // store the calculated icon here
+  $item['options']['fa_icon'] = $icon;
+}
+
+/**
  * Adds CSS classes based on user roles
  * Implements template_preprocess_html().
  *
@@ -14,7 +34,7 @@ function foundation_access_preprocess_html(&$variables) {
     // see if we have something that could be valid hex
     if (strlen($color) == 6 || strlen($color) == 3) {
       $color = '#' . $color;
-      $css .= '.foundation_access-' . $current . '_color{color:$color;}';
+      $css .= '.foundation_access-' . $current . "_color{color:$color;}";
       // specialized additions for each wheel value
       switch ($current) {
         case 'primary':
@@ -32,8 +52,8 @@ function foundation_access_preprocess_html(&$variables) {
       }
     }
   }
-  drupal_add_css($css, array('type' => 'inline'));
-  drupal_add_css('//fonts.googleapis.com/css?family=Droid+Serif:400,700,400italic,700italic|Open+Sans:300,600,700)', array('type' => 'external'));
+  drupal_add_css($css, array('type' => 'inline', 'group' => CSS_THEME));
+  drupal_add_css('//fonts.googleapis.com/css?family=Droid+Serif:400,700,400italic,700italic|Open+Sans:300,600,700)', array('type' => 'external', 'group' => CSS_THEME));
   // theme path shorthand should be handled here
   $variables['theme_path'] = base_path() . drupal_get_path('theme', 'foundation_access');
   foreach($variables['user']->roles as $role){
@@ -50,10 +70,17 @@ function foundation_access_preprocess_html(&$variables) {
       'alt' => strip_tags($variables['site_name']) . ' ' . t('logo'),
       'title' => strip_tags($variables['site_name']) . ' ' . t('Home'),
       'attributes' => array(
-        'class' => array('logo'),
+        'class' => array('logo__img'),
       ),
     )), '<front>', array('html' => TRUE));
   }
+  // add logo style classes to the logo element
+  $logo_classes = array();
+  $logo_option = theme_get_setting('foundation_access_logo_options');
+  if (isset($logo_option) && !is_null($logo_option)) {
+    $logo_classes[] = 'logo--' . $logo_option;
+  }
+  $variables['logo_classes'] = implode(' ', $logo_classes);
 }
 
 /**
@@ -62,13 +89,25 @@ function foundation_access_preprocess_html(&$variables) {
 function foundation_access_preprocess_page(&$variables) {
   // make sure we have lmsless enabled so we don't WSOD
   $variables['cis_lmsless'] = array('active' => array('title' => ''));
+  // support for lmsless since we don't require it
   if (module_exists('cis_lmsless')) {
     $variables['cis_lmsless'] = _cis_lmsless_theme_vars();
   }
+  // support for cis_shortcodes
   if (module_exists('cis_shortcodes')) {
     $block = cis_shortcodes_block_view('cis_shortcodes_block');
     if (!empty($block['content'])) {
       $variables['cis_shortcodes'] = $block['content'];
+    }
+  }
+  else {
+    $variables['cis_shortcodes'] = '';
+  }
+  // support for entity_iframe
+  if (module_exists('entity_iframe')) {
+    $block = entity_iframe_block_view('entity_iframe_block');
+    if (!empty($block['content'])) {
+      $variables['cis_shortcodes'] .= $block['content'];
     }
   }
   // show staff / instructors the course tools menu
@@ -83,17 +122,33 @@ function foundation_access_preprocess_page(&$variables) {
 }
 
 /**
- * Implements menu_link__main_menu.
+ * Implements template_menu_link.
  */
-function foundation_access_menu_link__main_menu(&$variables) {
-  return _foundation_access_menu_outline($variables);
-}
+function foundation_access_menu_link(&$variables) {
+  $element = $variables['element'];
+  $sub_menu = '';
+  $title = $element['#title'];
+  if ($element['#below']) {
+    $sub_menu = drupal_render($element['#below']);
+  }
+  // special handling for node based menu items
+  if ($element['#original_link']['router_path'] == 'node/%') {
+    $element['#localized_options']['html'] = TRUE;
 
-/**
- * Implements menu_tree__main_menu.
- */
-function foundation_access_menu_tree__main_menu($variables) {
-  return '<ul class="off-canvas-list has-submenu content-outline-navigation">' . $variables['tree'] . '</ul>';
+    if ($element['#below']) {
+      $element['#localized_options']['attributes']['class'][] = 'has-children';
+    }
+    // see if we have a localized override
+    if (isset($element['#localized_options']['fa_icon'])) {
+      $icon = $element['#localized_options']['fa_icon'];
+    }
+    // prefix node based titles with an icon
+    if (isset($icon)) {
+      $title = '<div class="icon-' . $icon . '-black outline-nav-icon"></div>' . $title;
+    }
+  }
+  $output = l($title, $element['#href'], $element['#localized_options']);
+  return '<li' . drupal_attributes($element['#attributes']) . '>' . $output . $sub_menu . "</li>\n";
 }
 
 /**
@@ -122,10 +177,10 @@ function _foundation_access_single_menu_link($element) {
   }
   $classes = implode(' ', $element['#attributes']['class']);
   $options['attributes']['class'] = $element['#attributes']['class'];
-  // default is a page icon
   $icon = 'page';
-  // allow for modification of the item
-  drupal_alter('foundation_access_menu_item_icon', $icon, $element);
+  if (isset($options['fa_icon'])) {
+    $icon = $options['fa_icon'];
+  }
   return '<li>' . l('<div class="icon-' . $icon . '-black outline-nav-icon"></div>' . $element['#title'], $element['#href'], $options) . '</li>';
 }
 
@@ -231,29 +286,6 @@ function _foundation_access_auto_label_build($word, $number, $counter) {
   }
   return $labeltmp;
 }
-
-/**
- * Implements hook_form_alter().
- */
-function foundation_access_form_alter(&$form, &$form_state, $form_id) {
-  // Search Block Fixes
-  if (isset($form['#form_id']) && $form['#form_id'] == 'search_block_form') {
-    // unset zurb core stuff
-    unset($form['search_block_form']['#prefix']);
-    unset($form['search_block_form']['#suffix']);
-    unset($form['actions']['submit']['#prefix']);
-    unset($form['actions']['submit']['#suffix']);
-    // add in custom placeholder to input field
-    $form['search_block_form']['#attributes']['placeholder'] = t('Search..');
-    // hidden prefix for accessibility
-    $form['search_block_form']['#prefix'] = '<h2 class="element-invisible">' . t('Search form') . '</h2>';
-    // add on our classes
-    $form['search_block_form']['#attributes']['class'] = array('etb-nav_item_search_input');
-    $form['actions']['submit']['#attributes']['class'] = array('etb-nav_item_search_btn', 'element-invisible');
-    $form['#attributes']['class'] = array('etb-nav_item_search');
-  }
-}
-
 
 /**
  * Implements theme_menu_local_task().

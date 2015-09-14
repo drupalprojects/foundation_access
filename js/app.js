@@ -36,7 +36,9 @@
 
   Drupal.behaviors.foundation_access = {
     attach: function(context, settings) {
-      $(".accessibility-content-toggle a").appendTo( ".cis_accessibility_check" );
+      if ($(".cis_accessibility_check a").length == 0) {
+        $(".accessibility-content-toggle a").appendTo( ".cis_accessibility_check" );
+      }
       $(".accessibility-content-toggle").hide();
     }
   };
@@ -44,7 +46,8 @@
   // sticky stuff
   Drupal.behaviors.stickyStuff = {
     attach: function (context, settings) {
-      $('.page-scroll.progress', context).sticky({topSpacing:0});
+      $('.book-navigation-header', context).sticky({topSpacing:4}).css('background-color','#FFFFFF');
+      $('.page-scroll.progress', context).sticky({topSpacing:0}).css('background-color','#EEEEEE');
     }
   };
   // ability to disable background scrolling on modal open
@@ -88,28 +91,32 @@
 
   Drupal.offcanvasHeight = {
     attach: function (context, settings) {
+      // ensure we have everything first
+      if ($("footer", context).length > 0 && $("#etb-tool-nav", context).length > 0) {
+        ////// This corrects the vertical height of the offcanvas wrapper to fill the open space on the page
+        $(".off-canvas-wrap .inner-wrap", context).css({"min-height": "0"}); // Clear the min-height
+        var footerOffset = $("footer", context)[0].offsetTop; // Detect top offset of footer
+        var offcanvasOffset = $("#etb-tool-nav", context)[0].offsetTop; // Detect top offset of offcanvas nav
+        var contentnavOffset = footerOffset - offcanvasOffset; // Figure out how tall the offcanvas menu should be
+        var remBase = parseInt($("body").css('font-size')); // Detect base px size for REM calculation
 
-      ////// This corrects the vertical height of the offcanvas wrapper to fill the open space on the page
-      $(".off-canvas-wrap .inner-wrap", context).css({"min-height": "0"}); // Clear the min-height
-      var footerOffset = $("footer", context)[0].offsetTop; // Detect top offset of footer
-      var offcanvasOffset = $("#etb-tool-nav", context)[0].offsetTop; // Detect top offset of offcanvas nav
-      var contentnavOffset = footerOffset - offcanvasOffset; // Figure out how tall the offcanvas menu should be
-      var remBase = parseInt($("body").css('font-size')); // Detect base px size for REM calculation
-
-      // var remSize = parseInt(remBase); // Remove px from remBase
-      var remOffCanvasOffset = contentnavOffset / remBase; // Divdes by remBase to get size in REMs
-      $(".off-canvas-wrap .inner-wrap", context).css({"min-height": remOffCanvasOffset+"rem"}); // Add the min-height to the wrapper
+        // var remSize = parseInt(remBase); // Remove px from remBase
+        var remOffCanvasOffset = contentnavOffset / remBase; // Divdes by remBase to get size in REMs
+        $(".off-canvas-wrap .inner-wrap", context).css({"min-height": remOffCanvasOffset+"rem"}); // Add the min-height to the wrapper
+      }
     }
   };
 
   Drupal.offcanvasSubmenuHeight = {
     attach: function (context, settings) {
       ////// This corrects the vertical height of the offcanvas sub-navigation panels
-      $("ul.off-canvas-list .left-submenu", context).css({"min-height": "0"}); // Clear the min-height
-      var remBase = parseInt($("body").css('font-size')); // Detect base px size for REM calculation
-      var offCanvasMenuHeight = $("#left-off-canvas-wrapper")[0].offsetHeight;
-      var remOffCanvasMenuOffset = offCanvasMenuHeight / remBase; // Divdes by remBase to get size in REMs
-      $("ul.off-canvas-list .left-submenu", context).css({"min-height": remOffCanvasMenuOffset+"rem"}); // Add the min-height to the wrapper
+      if ($("#left-off-canvas-wrapper").length > 0) {
+        $("ul.off-canvas-list .left-submenu", context).css({"min-height": "0"}); // Clear the min-height
+        var remBase = parseInt($("body").css('font-size')); // Detect base px size for REM calculation
+        var offCanvasMenuHeight = $("#left-off-canvas-wrapper")[0].offsetHeight;
+        var remOffCanvasMenuOffset = offCanvasMenuHeight / remBase; // Divdes by remBase to get size in REMs
+        $("ul.off-canvas-list .left-submenu", context).css({"min-height": remOffCanvasMenuOffset+"rem"}); // Add the min-height to the wrapper
+      }
     }
   };
 
@@ -149,5 +156,20 @@
     // forcibly call these to fire the first time
     Drupal.offcanvasHeight.attach();
     Drupal.offcanvasSubmenuHeight.attach();
+    /* Implement customer javascript here */
+    $(".disable-scroll").on("show", function () {
+      $("body").addClass("scroll-disabled");
+    }).on("hidden", function () {
+      $("body").removeClass("scroll-disabled")
+    });
+
+    $('*[data-reveal-id]').click(function () {
+      var revealID = $(this).attr("data-reveal-id");
+      var wrapper = $("#" + revealID);
+      // If the wrapper element is open then give it focus
+      if (wrapper.hasClass('open')) {
+        wrapper.focus();
+      }
+    });
   });
 })(jQuery);
