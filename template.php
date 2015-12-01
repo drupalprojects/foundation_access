@@ -81,6 +81,10 @@ function foundation_access_preprocess_html(&$variables) {
     $logo_classes[] = 'logo--' . $logo_option;
   }
   $variables['logo_classes'] = implode(' ', $logo_classes);
+  // support in-domain XSS exceptions
+  if (module_exists('cis_connector')) {
+    $variables['parent_origin'] = _cis_connector_parent_domain();
+  }
 }
 
 /**
@@ -110,11 +114,6 @@ function foundation_access_preprocess_page(&$variables) {
       $variables['cis_shortcodes'] .= $block['content'];
     }
   }
-  // show staff / instructors the course tools menu
-  if (_cis_connector_role_groupings(array('staff','teacher'))) {
-    $variables['tabs_extras'][100][] = '<hr>';
-    $variables['tabs_extras'][100][] = '<a href="#" data-reveal-id="block-menu-menu-course-tools-menu-nav-modal">' . t('Course Settings') . '</a>';
-  }
   // wrap non-node content in an article tag
   if (isset($variables['page']['content']['system_main']['main'])) {
     $variables['page']['content']['system_main']['main']['#markup'] = '<article class="large-12 columns view-mode-full">' . $variables['page']['content']['system_main']['main']['#markup'] . '</article>';
@@ -122,12 +121,127 @@ function foundation_access_preprocess_page(&$variables) {
 }
 
 /**
+ * Implementation of hook_preprocess_node().
+ */
+function foundation_access_preprocess_node(&$variables) {
+  $type = 'node';
+  $bundle = $variables['type'];
+  $viewmode = $variables['view_mode'];
+
+  // add the view mode name to the classes array.
+  if (isset($viewmode)) {
+    $variables['classes_array'][] = str_replace('_', '-', $viewmode);
+  }
+
+  // create inheritance templates and preprocess functions for this entity
+  if (module_exists('display_inherit')) {
+    display_inherit_inheritance_factory($type, $bundle, $viewmode, 'foundation_access', $variables);
+  }
+}
+
+/**
+ * Display Inherit External Video
+ */
+function foundation_access_preprocess_node__inherit__external_video__mediavideo(&$variables) {
+  $variables['poster'] = FALSE;
+  $variables['video_url'] = FALSE;
+  $variables['thumbnail'] = FALSE;
+  $poster_image_uri = '';
+  $elements = &$variables['elements'];
+
+  // Assign Poster
+  // if the poster field is available use that for the poster imgage
+  if (isset($elements['field_poster']['#items'][0])) {
+    $poster_image_uri = $elements['field_poster']['#items'][0]['uri'];
+  }
+  // if not, attempt to use the thumbnail created by the video upload field
+  elseif (isset($variables['content']['field_external_media']['#items'][0]['thumbnail_path'])) {
+    $poster_image_uri = $variables['content']['field_external_media']['#items'][0]['thumbnail_path'];
+  }
+  // if we have found a poster then assign it
+  if ($poster_image_uri) {
+    $variables['poster'] = image_style_url('mediavideo_poster', $poster_image_uri);
+  }
+
+  // Set the video url
+  if (isset($elements['field_external_media']['#items'][0]['video_url']) && $elements['field_external_media']['#items'][0]['video_url']) {
+    $variables['video_url'] = $elements['field_external_media']['#items'][0]['video_url'];
+  }
+
+  // Unset the poster if on the Mediavideo viewmode
+  if ($variables['view_mode'] == 'mediavideo') {
+    $variables['poster'] = NULL;
+  }
+}
+
+function foundation_access_preprocess_node__inherit__external_video__mediavideo__thumbnail(&$variables) {
+  $variables['thumbnail'] = true;
+}
+
+/**
+ * Display Inherit Image
+ */
+function foundation_access_preprocess_node__inherit__elmsmedia_image__image(&$variables) {
+  $variables['image'] = array();
+  $variables['image_caption'] = '';
+  $variables['image_cite'] = '';
+  $variables['image_lightbox_url'] = '';
+
+  // Assign Image
+  if (isset($variables['elements']['field_image'][0])) {
+    $variables['image'] = $variables['elements']['field_image'][0];
+    $variables['image']['#item']['attributes']['class'][] = 'image__img';
+  }
+
+  // Assign Caption
+  if (isset($variables['elements']['field_image_caption'][0]['#markup'])) {
+    $variables['image_caption'] = $variables['elements']['field_image_caption'][0]['#markup'];
+  }
+
+  // Assign Cite
+  if (isset($variables['elements']['field_citation'][0]['#markup'])) {
+    $variables['image_cite'] = $variables['elements']['field_citation'][0]['#markup'];
+  }
+
+  // If the viewmode contains "lightbox" then enable the lightbox option
+  if (strpos($variables['view_mode'], 'lightboxed')) {
+    $variables['image_lightbox_url'] = image_style_url('image_lightboxed', $variables['image']['#item']['uri']);
+  }
+}
+
+/**
+ * Display Inherit Image
+ */
+function foundation_access_preprocess_node__inherit__svg(&$variables) {
+  $variables['svg_aria_hidden'] = 'false';
+  $variables['svg_alttext'] = NULL;
+  $node_wrapper = entity_metadata_wrapper('node', $variables['node']);
+
+  try {
+    // if there is an accessbile text alternative then set the svg to aria-hidden
+    if ($node_wrapper->field_svg_alttext->value()) {
+      $variables['svg_aria_hidden'] = 'true';
+      $variables['svg_alttext'] = $node_wrapper->field_svg_alttext->value();
+    } 
+  } 
+  catch (EntityMetadataWrapperException $exc) {
+    watchdog(
+      'foundation_access',
+      'EntityMetadataWrapper exception in %function() <pre>@trace</pre>',
+      array('%function' => __FUNCTION__, '@trace' => $exc->getTraceAsString()),
+      WATCHDOG_ERROR
+    );
+  }
+}
+
+
+/**
  * Implements template_menu_link.
  */
 function foundation_access_menu_link(&$variables) {
   $element = $variables['element'];
   $sub_menu = '';
-  $title = $element['#title'];
+  $title = check_plain($element['#title']);
   if ($element['#below']) {
     $sub_menu = drupal_render($element['#below']);
   }
@@ -171,6 +285,7 @@ function foundation_access_menu_tree__menu_course_tools_menu($variables) {
 function _foundation_access_single_menu_link($element) {
   $options = $element['#localized_options'];
   $options['html'] = TRUE;
+  $title = check_plain($element['#title']);
   // ensure class array is at least set
   if (empty($element['#attributes']['class'])) {
     $element['#attributes']['class'] = array();
@@ -181,7 +296,7 @@ function _foundation_access_single_menu_link($element) {
   if (isset($options['fa_icon'])) {
     $icon = $options['fa_icon'];
   }
-  return '<li>' . l('<div class="icon-' . $icon . '-black outline-nav-icon"></div>' . $element['#title'], $element['#href'], $options) . '</li>';
+  return '<li>' . l('<div class="icon-' . $icon . '-black outline-nav-icon"></div>' . $title, $element['#href'], $options) . '</li>';
 }
 
 /**
@@ -193,13 +308,14 @@ function _foundation_access_menu_outline($variables, $word = FALSE, $number = FA
   $element = $variables['element'];
   $sub_menu = '';
   $return = '';
+  $title = check_plain($element['#title']);
   if ($element['#below']) {
     $sub_menu = drupal_render($element['#below']);
   }
   $id = 'zfa-menu-panel-' . $element['#original_link']['mlid'];
   // account for no link'ed items
   if ($element['#href'] == '<nolink>') {
-    $output = '<a href="#">' . $element['#title'] . '</a>';
+    $output = '<a href="#">' . $title . '</a>';
   }
   // account for sub menu things being rendered differently
   if (empty($sub_menu)) {
@@ -219,7 +335,7 @@ function _foundation_access_menu_outline($variables, $word = FALSE, $number = FA
     // calculate relative depth
     $depth = $element['#original_link']['depth'] - 2;
     // generate a short name
-    $short = preg_replace('/[^a-zA-Z0-9]/', '', strtolower($element['#title'])) . '-' . $element['#original_link']['mlid'];
+    $short = preg_replace('/[^a-zA-Z0-9]/', '', strtolower($title)) . '-' . $element['#original_link']['mlid'];
     // extract nid
     $nid = str_replace('node/', '', $element['#href']);
     // test for active class, meaning this should be expanded by default
@@ -231,7 +347,7 @@ function _foundation_access_menu_outline($variables, $word = FALSE, $number = FA
       if (!empty($labeltmp)) {
         $return .= '<h2>' . $labeltmp . '</h2>' . "\n";
       }
-      $return .= '<h3>' . $element['#title'] . '</h3>' . "\n" .
+      $return .= '<h3>' . $title . '</h3>' . "\n" .
       '</a>' . "\n" .
       '<ul class="left-submenu level-' . $depth . '-sub">'  . "\n" .
       '<div>'  . "\n";
@@ -247,7 +363,7 @@ function _foundation_access_menu_outline($variables, $word = FALSE, $number = FA
       $counter++;
     }
     else {
-      $return ='<li class="has-submenu level-' . $depth . '-top ' . implode(' ', $element['#attributes']['class']) . '"><a href="#"><div class="icon-content-black outline-nav-icon"></div><span class="outline-nav-text">' . $element['#title'] . '</span></a>' . "\n" .
+      $return ='<li class="has-submenu level-' . $depth . '-top ' . implode(' ', $element['#attributes']['class']) . '"><a href="#"><div class="icon-content-black outline-nav-icon"></div><span class="outline-nav-text">' . $title . '</span></a>' . "\n" .
       '<ul class="left-submenu level-' . $depth . '-sub">'  . "\n" .
       '<div>'  . "\n";
       $labeltmp = _foundation_access_auto_label_build($word, $number, $counter);
@@ -292,7 +408,7 @@ function _foundation_access_auto_label_build($word, $number, $counter) {
  */
 function foundation_access_menu_local_task(&$variables) {
   $link = $variables['element']['#link'];
-  $link_text = $link['title'];
+  $link_text = check_plain($link['title']);
   $li_class = (!empty($variables['element']['#active']) ? ' class="active"' : '');
 
   if (!empty($variables['element']['#active'])) {
@@ -359,4 +475,95 @@ function foundation_access_breadcrumb($variables) {
 
     return $breadcrumbs;
   }
+}
+
+/**
+ * Helper function for return a whitelist of allowed tags that can be
+ * present in an SVG file.
+ */
+function _foundation_access_svg_whitelist_tags() {
+  $allowed_tags = array(
+    'animate',
+    'animateColor',
+    'animateMotion',
+    'animateTransform',
+    'mpath',
+    'set',
+    'circle',
+    'ellipse',
+    'line',
+    'polygon',
+    'polyline',
+    'rect',
+    'a',
+    'defs',
+    'glyph',
+    'g',
+    'marker',
+    'mask',
+    'missing-glyph',
+    'pattern',
+    'svg',
+    'switch',
+    'symbol',
+    'desc',
+    'metadata',
+    'title',
+    'feBlend',
+    'feColorMatrix',
+    'feComponentTransfer',
+    'feComposite',
+    'feConvolveMatrix',
+    'feDiffuseLighting',
+    'feDisplacementMap',
+    'feFlood',
+    'feFuncA',
+    'feFuncB',
+    'feFuncG',
+    'feFuncR',
+    'feGaussianBlur',
+    'feImage',
+    'feMerge',
+    'feMergeNode',
+    'feMorphology',
+    'feOffset',
+    'feSpecularLighting',
+    'feTile',
+    'feTurbulence',
+    'font',
+    'font-face',
+    'font-face-format',
+    'font-face-name',
+    'font-face-src',
+    'font-face-uri',
+    'hkern',
+    'vkern',
+    'linearGradient',
+    'radialGradient',
+    'stop',
+    'image',
+    'path',
+    'text',
+    'use',
+    'feDistantLight',
+    'fePointLight',
+    'feSpotLight',
+    'altGlyph',
+    'altGlyphDef',
+    'altGlyphItem',
+    'glyphRef',
+    'textPath',
+    'tref',
+    'tspan',
+    'clipPath',
+    'color-profile',
+    'cursor',
+    'filter',
+    'foreignObject',
+    'script',
+    'style',
+    'view',
+  );
+
+  return $allowed_tags;
 }
