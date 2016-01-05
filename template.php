@@ -31,8 +31,11 @@ function foundation_access_preprocess_html(&$variables) {
   $css = '';
   foreach ($colors as $current) {
     $color = theme_get_setting('foundation_access_' . $current . '_color');
+    // allow other projects to override the FA colors
+    drupal_alter('foundation_access_colors', $color, $current);
     // see if we have something that could be valid hex
     if (strlen($color) == 6 || strlen($color) == 3) {
+      $complement = '#' . _foundation_access_complement($color);
       $color = '#' . $color;
       $css .= '.foundation_access-' . $current . "_color{color:$color;}";
       // specialized additions for each wheel value
@@ -44,10 +47,10 @@ function foundation_access_preprocess_html(&$variables) {
           $css .= ".etb-book h3,.etb-book h4,.etb-book h5 {color: $color !important;}";
         break;
         case 'required':
-          $css .= "div.textbook_box_required li:hover:before{border-color: $color !important;} div.textbook_box_required li:before {background: $color !important;} div.textbook_box_required { border: 2px solid $color !important;} .textbook_box_required h3 {color: $color !important;}";
+          $css .= "div.textbook_box_required li:hover:before{border-color: $color !important;} div.textbook_box_required li:before {color: $complement !important; background: $color !important;} div.textbook_box_required { border: 2px solid $color !important;} .textbook_box_required h3 {color: $color !important;}";
         break;
         case 'optional':
-          $css .= "div.textbook_box_optional li:hover:before{border-color: $color !important;} div.textbook_box_optional li:before {background: $color !important;} div.textbook_box_optional { border: 2px solid $color !important;} .textbook_box_optional h3 {color: $color !important;}";
+          $css .= "div.textbook_box_optional li:hover:before{border-color: $color !important;} div.textbook_box_optional li:before {color: $complement !important; background: $color !important;} div.textbook_box_optional { border: 2px solid $color !important;} .textbook_box_optional h3 {color: $color !important;}";
         break;
       }
     }
@@ -91,6 +94,23 @@ function foundation_access_preprocess_html(&$variables) {
  * Implements template_preprocess_page.
  */
 function foundation_access_preprocess_page(&$variables) {
+  $menu_item = menu_get_item();
+  // sniff out if this is a view
+  if ($menu_item['page_callback'] == 'views_page') {
+    // try and auto append exposed filters to our local_subheader region
+    $bid = '-exp-' . $menu_item['page_arguments'][0] . '-' . (is_array($menu_item['page_arguments'][1]) ? $menu_item['page_arguments'][1][0] : $menu_item['page_arguments'][1]);
+    $block = module_invoke('views', 'block_view', $bid);
+    $variables['page']['local_subheader'][$bid] = $block['content'];
+  }
+  $variables['distro'] = variable_get('install_profile', 'standard');
+  // load registry for this distro
+  $settings = _cis_connector_build_registry($variables['distro']);
+  $home_text = (isset($settings['default_title']) ? $settings['default_title'] : $variables['distro']);
+  $variables['home'] = l('<div class="' . $variables['distro'] . '-home elmsln-home-icon icon-' . $variables['distro'] . '-black etb-modal-icons"></div><span>' . $home_text . '</span>', '<front>', array('html' => TRUE, 'attributes' => array('class' => array($variables['distro'] . '-home-button', 'elmsln-home-button-link'))));
+  // clever
+  $keys = array_keys($variables['page']['header']);
+  $keyname = array_shift($keys);
+  $variables['page']['header'][$keyname]['#prefix'] = $variables['home'];
   // make sure we have lmsless enabled so we don't WSOD
   $variables['cis_lmsless'] = array('active' => array('title' => ''));
   // support for lmsless since we don't require it
@@ -117,6 +137,47 @@ function foundation_access_preprocess_page(&$variables) {
   // wrap non-node content in an article tag
   if (isset($variables['page']['content']['system_main']['main'])) {
     $variables['page']['content']['system_main']['main']['#markup'] = '<article class="large-12 columns view-mode-full">' . $variables['page']['content']['system_main']['main']['#markup'] . '</article>';
+  }
+  /**
+   * @todo Get rid of this logic and put it somewhere else
+   *       based on the new design.
+   */
+  // add a sharing url to view the specific section
+  if (module_exists('cis_connector')) {
+    $url_options = array(
+      'absolute' => TRUE,
+    );
+    $current_section = _cis_connector_section_context();
+    if (isset($current_section) && $current_section) {
+      $url_options['query']['elmsln_active_course'] = $current_section;
+    }
+    $current_page = url(current_path(), $url_options);
+
+    // establish the fieldset container for shortcodes
+    $field['cis_section_share'] = array(
+      '#type' => 'fieldset',
+      '#collapsed' => FALSE,
+      '#collapsible' => TRUE,
+      '#title' => t('Share this page'),
+    );
+    $field['cis_section_share']['cis_section_share_link'] = array(
+      '#title' => t('Page URL'),
+      '#value' => $current_page,
+      '#type' => 'textfield',
+      '#weight' => 0,
+    );
+    $variables['cis_section_share'] = $field;
+  }
+  // attempt to find an edit path for the current page
+  if (isset($variables['tabs']) && is_array($variables['tabs']['#primary'])) {
+    foreach ($variables['tabs']['#primary'] as $key => $tab) {
+      $edit_path = arg(0) . '/' . arg(1) . '/edit';
+      if (isset($tab['#link']['href']) && $tab['#link']['href'] == $edit_path) {
+        $variables['edit_path'] = base_path() . $edit_path;
+        // hide the edit tab cause our on canvas pencil does this
+        unset($variables['tabs']['#primary'][$key]);
+      }
+    }
   }
 }
 
@@ -567,3 +628,124 @@ function _foundation_access_svg_whitelist_tags() {
 
   return $allowed_tags;
 }
+
+/**
+ * Find the complementary color from a hexcode.
+ * Assembled from the blog http://www.serennu.com/colour/rgbtohsl.php
+ * @param  string $hexcode string that's a 6 digit hex
+ * @return string a complementary color that's the inverse of the input.
+ */
+function _foundation_access_complement($hexcode) {
+  // account for hex that's only 3 digits
+  if (strlen($hexcode) == 3) {
+    // $hexcode is the six digit hex colour code we want to convert
+    $redhex  = substr($hexcode, 0, 1) . substr($hexcode, 0, 1);
+    $greenhex = substr($hexcode, 1, 1) . substr($hexcode, 1, 1);
+    $bluehex = substr($hexcode, 2, 1) . substr($hexcode, 2, 1);
+  }
+  else {
+    // $hexcode is the six digit hex colour code we want to convert
+    $redhex  = substr($hexcode, 0, 2);
+    $greenhex = substr($hexcode, 2, 2);
+    $bluehex = substr($hexcode, 4, 2);
+  }
+  // $var_r, $var_g and $var_b are the three decimal fractions to be input to our RGB-to-HSL conversion routine
+  $var_r = (hexdec($redhex)) / 255;
+  $var_g = (hexdec($greenhex)) / 255;
+  $var_b = (hexdec($bluehex)) / 255;
+  // Input is $var_r, $var_g and $var_b from above
+  // Output is HSL equivalent as $h, $s and $l — these are again expressed as fractions of 1, like the input values
+
+  $var_min = min($var_r,$var_g,$var_b);
+  $var_max = max($var_r,$var_g,$var_b);
+  $del_max = $var_max - $var_min;
+
+  $l = ($var_max + $var_min) / 2;
+
+  if ($del_max == 0) {
+    $h = 0;
+    $s = 0;
+  }
+  else {
+    if ($l < 0.5) {
+      $s = $del_max / ($var_max + $var_min);
+    }
+    else {
+      $s = $del_max / (2 - $var_max - $var_min);
+    }
+
+    $del_r = ((($var_max - $var_r) / 6) + ($del_max / 2)) / $del_max;
+    $del_g = ((($var_max - $var_g) / 6) + ($del_max / 2)) / $del_max;
+    $del_b = ((($var_max - $var_b) / 6) + ($del_max / 2)) / $del_max;
+
+    if ($var_r == $var_max) {
+      $h = $del_b - $del_g;
+    }
+    elseif ($var_g == $var_max) {
+      $h = (1 / 3) + $del_r - $del_b;
+    }
+    elseif ($var_b == $var_max) {
+      $h = (2 / 3) + $del_g - $del_r;
+    }
+
+    if ($h < 0) {
+      $h += 1;
+    }
+
+    if ($h > 1) {
+      $h -= 1;
+    }
+  }
+  // Calculate the opposite hue, $h2
+  $h2 = $h + 0.5;
+  if ($h2 > 1) {
+    $h2 -= 1;
+  }
+  // Input is HSL value of complementary colour, held in $h2, $s, $l as fractions of 1
+  // Output is RGB in normal 255 255 255 format, held in $r, $g, $b
+  // Hue is converted using function _foundation_access_hue_2_rgb, shown at the end of this code
+  if ($s == 0) {
+    $r = $l * 255;
+    $g = $l * 255;
+    $b = $l * 255;
+  }
+  else {
+    if ($l < 0.5) {
+      $var_2 = $l * (1 + $s);
+    }
+    else {
+      $var_2 = ($l + $s) - ($s * $l);
+    }
+    $var_1 = 2 * $l - $var_2;
+    $r = 255 * _foundation_access_hue_2_rgb($var_1,$var_2,$h2 + (1 / 3));
+    $g = 255 * _foundation_access_hue_2_rgb($var_1,$var_2,$h2);
+    $b = 255 * _foundation_access_hue_2_rgb($var_1,$var_2,$h2 - (1 / 3));
+  }
+  // And after that routine, we finally have $r, $g and $b in 255 255 255 (RGB) format, which we can convert to six digits of hex:
+  $rhex = sprintf("%02X", round($r));
+  $ghex = sprintf("%02X", round($g));
+  $bhex = sprintf("%02X", round($b));
+
+  $rgbhex = $rhex.$ghex.$bhex;
+  return $rgbhex;
+}
+
+// Function to convert hue to RGB, called from above
+function _foundation_access_hue_2_rgb($v1, $v2, $vh) {
+  if ($vh < 0) {
+    $vh += 1;
+  }
+  if ($vh > 1) {
+    $vh -= 1;
+  }
+  if ((6 * $vh) < 1) {
+    return ($v1 + ($v2 - $v1) * 6 * $vh);
+  }
+  if ((2 * $vh) < 1) {
+    return ($v2);
+  }
+  if ((3 * $vh) < 2) {
+    return ($v1 + ($v2 - $v1) * ((2 / 3 - $vh) * 6));
+  }
+  return ($v1);
+};
