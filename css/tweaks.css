@@ -1,3 +1,25 @@
+.ferpa-privacy-blur {
+  filter: blur(4px);
+  /* Webkit */
+  -webkit-filter: blur(4px);
+  /* Opera */
+  -o-filter: blur(4px);
+}
+
+.ferpa-privacy-blur:hover {
+  filter: blur(3px);
+  /* Webkit */
+  -webkit-filter: blur(3px);
+  /* Opera */
+  -o-filter: blur(3px);
+  border: 1px solid #FF0000;
+}
+
+.cke_contents {
+  border: 1px solid #ccc !important;
+  padding: .5rem !important;
+}
+
 .r-header__icon {
   opacity: 0.5;
 }
@@ -9,6 +31,9 @@
 }
 .r-header__icon-secondary:hover {
   opacity: 0.8;
+}
+.r-header__icon.fa-action-disabled {
+  opacity: 0.1;
 }
 
 #block-mooc-nav-block-mooc-nav-nav {

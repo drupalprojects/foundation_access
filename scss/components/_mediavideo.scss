@@ -127,6 +127,7 @@ category:
 	}
 
 	&__poster {
+		margin-top: 2rem;
 		position: absolute;
 		top: 0;
 		left: 0;
@@ -230,7 +231,6 @@ category:
 	}
 
 	.mediavideo__poster {
-		@extend .image;
 		// Margin has already been accounted for in the base element.
 		margin: 0;
 		position: relative;

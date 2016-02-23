@@ -41,24 +41,27 @@ function foundation_access_preprocess_html(&$variables) {
       // specialized additions for each wheel value
       switch ($current) {
         case 'primary':
-          $css .= ".etb-book h1,.etb-book h2 {color: $color !important;}";
+          $css .= ".etb-book h1,.etb-book h2 {color: $color;}";
         break;
         case 'secondary':
-          $css .= ".etb-book h3,.etb-book h4,.etb-book h5 {color: $color !important;}";
+          $css .= ".etb-book h3,.etb-book h4,.etb-book h5 {color: $color;}";
         break;
         case 'required':
-          $css .= "div.textbook_box_required li:hover:before{border-color: $color !important;} div.textbook_box_required li:before {color: $complement !important; background: $color !important;} div.textbook_box_required { border: 2px solid $color !important;} .textbook_box_required h3 {color: $color !important;}";
+          $css .= "div.textbook_box_required li:hover:before{border-color: $color;} div.textbook_box_required li:before {color: $complement; background: $color;} div.textbook_box_required { border: 2px solid $color;} .textbook_box_required h3 {color: $color;}";
         break;
         case 'optional':
-          $css .= "div.textbook_box_optional li:hover:before{border-color: $color !important;} div.textbook_box_optional li:before {color: $complement !important; background: $color !important;} div.textbook_box_optional { border: 2px solid $color !important;} .textbook_box_optional h3 {color: $color !important;}";
+          $css .= "div.textbook_box_optional li:hover:before{border-color: $color;} div.textbook_box_optional li:before {color: $complement; background: $color;} div.textbook_box_optional { border: 2px solid $color;} .textbook_box_optional h3 {color: $color;}";
         break;
       }
     }
   }
-  drupal_add_css($css, array('type' => 'inline', 'group' => CSS_THEME));
-  drupal_add_css('//fonts.googleapis.com/css?family=Droid+Serif:400,700,400italic,700italic|Open+Sans:300,600,700)', array('type' => 'external', 'group' => CSS_THEME));
-  // theme path shorthand should be handled here
   $variables['theme_path'] = base_path() . drupal_get_path('theme', 'foundation_access');
+  drupal_add_css($css, array('type' => 'inline', 'group' => CSS_THEME, 'weight' => 1000));
+  drupal_add_css('//fonts.googleapis.com/css?family=Droid+Serif:400,700,400italic,700italic|Open+Sans:300,600,700)', array('type' => 'external', 'group' => CSS_THEME));
+  drupal_add_css(drupal_get_path('theme', 'foundation_access') . '/bower_components/material-design-iconic-font/dist/css/material-design-iconic-font.css');
+
+
+  // theme path shorthand should be handled here
   foreach($variables['user']->roles as $role){
     $variables['classes_array'][] = 'role-' . drupal_html_class($role);
   }
@@ -84,10 +87,6 @@ function foundation_access_preprocess_html(&$variables) {
     $logo_classes[] = 'logo--' . $logo_option;
   }
   $variables['logo_classes'] = implode(' ', $logo_classes);
-  // support in-domain XSS exceptions
-  if (module_exists('cis_connector')) {
-    $variables['parent_origin'] = _cis_connector_parent_domain();
-  }
 }
 
 /**
@@ -107,10 +106,12 @@ function foundation_access_preprocess_page(&$variables) {
   $settings = _cis_connector_build_registry($variables['distro']);
   $home_text = (isset($settings['default_title']) ? $settings['default_title'] : $variables['distro']);
   $variables['home'] = l('<div class="' . $variables['distro'] . '-home elmsln-home-icon icon-' . $variables['distro'] . '-black etb-modal-icons"></div><span>' . $home_text . '</span>', '<front>', array('html' => TRUE, 'attributes' => array('class' => array($variables['distro'] . '-home-button', 'elmsln-home-button-link'))));
-  // clever
-  $keys = array_keys($variables['page']['header']);
-  $keyname = array_shift($keys);
-  $variables['page']['header'][$keyname]['#prefix'] = $variables['home'];
+  // ensure header has something in it in the first place
+  if (isset($variables['page']['header'])) {
+    $keys = array_keys($variables['page']['header']);
+    $keyname = array_shift($keys);
+    $variables['page']['header'][$keyname]['#prefix'] = $variables['home'];
+  }
   // make sure we have lmsless enabled so we don't WSOD
   $variables['cis_lmsless'] = array('active' => array('title' => ''));
   // support for lmsless since we don't require it
@@ -283,8 +284,8 @@ function foundation_access_preprocess_node__inherit__svg(&$variables) {
     if ($node_wrapper->field_svg_alttext->value()) {
       $variables['svg_aria_hidden'] = 'true';
       $variables['svg_alttext'] = $node_wrapper->field_svg_alttext->value();
-    } 
-  } 
+    }
+  }
   catch (EntityMetadataWrapperException $exc) {
     watchdog(
       'foundation_access',
@@ -295,6 +296,42 @@ function foundation_access_preprocess_node__inherit__svg(&$variables) {
   }
 }
 
+/**
+ * Implements hook_theme_registry_alter().
+ */
+function foundation_access_theme_registry_alter(&$theme_registry) {
+  // Add a template file for clipboardjs
+  $theme_registry['clipboardjs']['template'] = 'clipboardjs';
+  $theme_registry['clipboardjs']['preprocess functions'][] = 'template_preprocess_clipboardjs';
+}
+
+function foundation_access_preprocess_clipboardjs(&$variables) {
+  $variables['content'] = array();
+  $uniqid = uniqid('clipboardjs-');
+
+  $variables['content']['text'] = array(
+    '#type' => 'container',
+    '#attributes' => array(
+      'id' => $uniqid,
+    ),
+  );
+
+  $variables['content']['text']['markup'] = array(
+    '#markup' => $variables['text'],
+  );
+
+  $variables['content']['button'] = array(
+    '#type' => 'button',
+    '#value' => check_plain($variables['button_label']),
+    '#attributes' => array(
+      'class' => array('clipboardjs-button', 'zmdi', 'zmdi-copy'),
+      'data-clipboard-alert' => $variables['alert_style'],
+      'data-clipboard-alert-text' => $variables['alert_text'],
+      'data-clipboard-target' => '#' . $uniqid,
+      'onClick' => 'return false;',
+    ),
+  );
+}
 
 /**
  * Implements template_menu_link.
@@ -327,17 +364,42 @@ function foundation_access_menu_link(&$variables) {
 }
 
 /**
- * Implements menu_tree__menu_cis_add.
+<<<<<<< HEAD
+ * Implements menu_tree__menu_elmsln_settings.
+=======
+ * Implements menu_tree__menu_course_tools_menu.
+>>>>>>> origin/menu-refactor
  */
-function foundation_access_menu_tree__menu_cis_add($variables) {
-  return '<ul id="add-menu-drop" data-dropdown-content class="f-dropdown" role="menu" aria-hidden="false" tabindex="-1" class="menu">' . $variables['tree'] . '</ul>';
+function foundation_access_menu_tree__menu_elmsln_settings($variables) {
+  return '<ul class="has-submenu">' . $variables['tree'] . '</ul>';
 }
 
 /**
- * Implements menu_tree__menu_course_tools_menu.
+ * Implements menu_tree__menu_elmsln_navigation.
  */
-function foundation_access_menu_tree__menu_course_tools_menu($variables) {
-  return '<ul class="has-submenu">' . $variables['tree'] . '</ul>';
+function foundation_access_menu_tree__menu_elmsln_navigation($variables) {
+  return '<ul class="header-menu-options">' . $variables['tree'] . '</ul>';
+}
+
+/**
+ * Implements menu_tree__menu_elmsln_add.
+ */
+function foundation_access_menu_tree__menu_elmsln_add($variables) {
+  return '<ul id="add-menu-drop" data-dropdown-content class="f-dropdown" role="menu" aria-hidden="false" tabindex="-1" class="menu">' . $variables['tree'] . '</ul>';
+}
+
+function foundation_access_preprocess_book_sibling_nav(&$variables) {
+  // Outline Labeling theme setting
+  $variables['outline_labeling'] = theme_get_setting('mooc_foundation_access_outline_labeling');
+  // Outline Label theme setting
+  if ($labeling = $variables['outline_labeling']) {
+    if ($labeling == 'auto_both' || $labeling == 'auto_text') {
+      $variables['outline_label'] = theme_get_setting('mooc_foundation_access_outline_label');
+    }
+    else {
+      $variables['outline_label'] = '';
+    }
+  }
 }
 
 /**
