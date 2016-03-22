@@ -1,17 +1,35 @@
+a.add-menu-drop {
+  float: left;
+  margin-right: 2rem !important;
+}
+
+.filter-guidelines,
+.filter-help {
+  display:none;
+}
+
+.horizontal-tabs ul.horizontal-tabs-list a {
+  font-size: .75rem;
+}
+.horizontal-tabs ul.horizontal-tabs-list .summary {
+  display:none;
+}
+
+#etb-course-nav span.course-title,
+#etb-course-nav span.course-abrv {
+  justify-content: flex-end;
+}
+
 .ferpa-privacy-blur {
-  filter: blur(4px);
+  filter: blur(6px);
   /* Webkit */
-  -webkit-filter: blur(4px);
+  -webkit-filter: blur(6px);
   /* Opera */
-  -o-filter: blur(4px);
+  -o-filter: blur(6px);
+  opacity: .4;
 }
 
 .ferpa-privacy-blur:hover {
-  filter: blur(3px);
-  /* Webkit */
-  -webkit-filter: blur(3px);
-  /* Opera */
-  -o-filter: blur(3px);
   border: 1px solid #FF0000;
 }
 
@@ -72,6 +90,9 @@
 
 #backtotop {
   background: url(../img/backtotop.png) no-repeat center center;
+  right:0px;
+  bottom: 0px;
+  z-index: 1000;
 }
 
 @media (-webkit-min-device-pixel-ratio: 2),
@@ -102,26 +123,51 @@ ul.header-menu-options {
   margin: 0;
   font-size: 1rem;
 }
+ul.header-menu-options li a {
+  padding: .5rem .5rem;
+  margin: 0;
+}
 ul.header-menu-options li {
   float:left;
   margin: 0;
   list-style: none;
   display: inline-flex;
+}
+ul.header-menu-options li {
   border-bottom: 1px solid #333333;
 }
-ul.header-menu-options li a {
-  padding: .75rem 1rem;
-  margin: 0;
-}
 ul.header-menu-options li.active-trail {
-  background-color: #eeeeee;
   border-left: 1px solid #333333;
   border-right: 1px solid #333333;
   border-top: 1px solid #333333;
   border-bottom: transparent;
 }
-ul.header-menu-options li:hover {
+
+.r-header ul.header-menu-options li.active-trail {
   background-color: #eeeeee;
+}
+.r-header ul.header-menu-options li:hover {
+  background-color: #eeeeee;
+}
+
+.r-local-header ul.header-menu-options{
+  font-size: .9rem;
+}
+.r-local-header ul.header-menu-options li.active-trail {
+  background-color: #eeeeff;
+}
+.r-local-header ul.header-menu-options li:hover {
+  background-color: #eeeeff;
+}
+
+.r-local-subheader ul.header-menu-options{
+  font-size: .8rem;
+}
+.r-local-subheader ul.header-menu-options li.active-trail {
+  background-color: #ddddff;
+}
+.r-local-subheader ul.header-menu-options li:hover {
+  background-color: #ddddff;
 }
 
 .cis-admin-area {
@@ -217,4 +263,18 @@ ul.off-canvas-list .left-submenu li.back {
   display: -webkit-inline-flex;
   display: -ms-inline-flexbox;
   display: inline-flex;
+}
+
+@media all and (min-width: 720px) {
+  .form-actions.form-wrapper {
+    position: fixed;
+    bottom: 0;
+    background: #fff;
+    border-top: 1px solid #CCCCCC;
+    width: 100%;
+    left: 0;
+    padding: 1rem 1rem 0px;
+    margin: 0;
+    z-index: 999;
+  }
 }

@@ -1,26 +1,6 @@
 <?php
 
 /**
- * Implements hook_menu_link_alter().
- *
- * Allow Foundation Access to affect the menu links table
- * so that we can allow other projects to store an icon
- * representation of what we're working on or status information
- * about it.
- *
- */
-function foundation_access_menu_link_alter(&$item) {
-  // this allows other projects to influence the icon seletion for menu items
-  $icon = 'page';
-  // #href proprety expected for use in the FA menu item icon
-  $item['#href'] = $item['link_path'];
-  // support for the primary theme used with MOOC platform
-  drupal_alter('foundation_access_menu_item_icon', $icon, $item);
-  // store the calculated icon here
-  $item['options']['fa_icon'] = $icon;
-}
-
-/**
  * Adds CSS classes based on user roles
  * Implements template_preprocess_html().
  *
@@ -56,14 +36,17 @@ function foundation_access_preprocess_html(&$variables) {
     }
   }
   $variables['theme_path'] = base_path() . drupal_get_path('theme', 'foundation_access');
-  drupal_add_css($css, array('type' => 'inline', 'group' => CSS_THEME, 'weight' => 1000));
-  drupal_add_css('//fonts.googleapis.com/css?family=Droid+Serif:400,700,400italic,700italic|Open+Sans:300,600,700)', array('type' => 'external', 'group' => CSS_THEME));
-  drupal_add_css(drupal_get_path('theme', 'foundation_access') . '/bower_components/material-design-iconic-font/dist/css/material-design-iconic-font.css');
-
+  drupal_add_css($css, array('type' => 'inline', 'group' => CSS_THEME, 'weight' => 999));
+  drupal_add_css('//fonts.googleapis.com/css?family=Droid+Serif:400,700,400italic,700italic|Open+Sans:300,600,700)', array('type' => 'external', 'group' => CSS_THEME, 'weight' => 1000));
+  drupal_add_css(drupal_get_path('theme', 'foundation_access') . '/bower_components/material-design-iconic-font/dist/css/material-design-iconic-font.min.css', array('group' => CSS_THEME, 'weight' => 1001));
 
   // theme path shorthand should be handled here
   foreach($variables['user']->roles as $role){
     $variables['classes_array'][] = 'role-' . drupal_html_class($role);
+  }
+  // support for class to render in a modal
+  if (isset($_GET['modal'])) {
+    $variables['classes_array'][] = 'modal-rendered';
   }
   // add page level variables into scope for the html tpl file
   $variables['site_name'] = check_plain(variable_get('site_name', 'ELMSLN'));
@@ -124,6 +107,9 @@ function foundation_access_preprocess_page(&$variables) {
     if (!empty($block['content'])) {
       $variables['cis_shortcodes'] = $block['content'];
     }
+    else {
+      $variables['cis_shortcodes'] = '';
+    }
   }
   else {
     $variables['cis_shortcodes'] = '';
@@ -148,9 +134,15 @@ function foundation_access_preprocess_page(&$variables) {
     $url_options = array(
       'absolute' => TRUE,
     );
+    // check for setting section context
     $current_section = _cis_connector_section_context();
     if (isset($current_section) && $current_section) {
-      $url_options['query']['elmsln_active_course'] = $current_section;
+      $url_options['query']['elmsln_active_section'] = $current_section;
+    }
+    // check for setting course context
+    $current_course = _cis_connector_course_context();
+    if (isset($current_course) && $current_course) {
+      $url_options['query']['elmsln_active_course'] = $current_course;
     }
     $current_page = url(current_path(), $url_options);
 
@@ -171,8 +163,8 @@ function foundation_access_preprocess_page(&$variables) {
   }
   // attempt to find an edit path for the current page
   if (isset($variables['tabs']) && is_array($variables['tabs']['#primary'])) {
+    $edit_path = arg(0) . '/' . arg(1) . '/edit';
     foreach ($variables['tabs']['#primary'] as $key => $tab) {
-      $edit_path = arg(0) . '/' . arg(1) . '/edit';
       if (isset($tab['#link']['href']) && $tab['#link']['href'] == $edit_path) {
         $variables['edit_path'] = base_path() . $edit_path;
         // hide the edit tab cause our on canvas pencil does this
@@ -364,11 +356,7 @@ function foundation_access_menu_link(&$variables) {
 }
 
 /**
-<<<<<<< HEAD
  * Implements menu_tree__menu_elmsln_settings.
-=======
- * Implements menu_tree__menu_course_tools_menu.
->>>>>>> origin/menu-refactor
  */
 function foundation_access_menu_tree__menu_elmsln_settings($variables) {
   return '<ul class="has-submenu">' . $variables['tree'] . '</ul>';
