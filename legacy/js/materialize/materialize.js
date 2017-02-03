@@ -1,5 +1,15 @@
 (function($) {
 'use strict';
+  /**
+   * behavior to make sure select lists are applied every time we do an ajax reload.
+   */
+  Drupal.behaviors.materializeCSS = {
+    attach: function (context, settings) {
+      // select lists but not the chosen ones
+      $('select').not('.chosen').not('.cke_dialog_body select').not('.form-select.initialized').material_select();
+    }
+  };
+
   Drupal.settings.activeSideNav = null;
   // add support for accessibility of materialized components
   $(document).bind('keydown', function(event) {
@@ -18,8 +28,6 @@
   });
   // events that help with teeing up materialize styles the first run
   $(document).ready(function(){
-    // select lists but not the chosen ones
-    $('select').not('.chosen').not('.cke_dialog_body select').material_select();
     // enable parallax
     $('.parallax').parallax();
     // normal carousel
@@ -39,6 +47,9 @@
       gutter: 0,
       belowOrigin: true,
       alignment: 'left'
+    });
+    $('body:not(.page-cle-app) .elmsln-dropdown-button').click(function(){
+      $('#etb-course-nav').css('z-index', '2');
     });
     // side triggers
     $('.elmsln-right-side-nav-trigger').bind('click', function() {
@@ -107,7 +118,7 @@
     // apply border to things that want our background
     $('.cis-lmsless-border, .tabs li.tab a').addClass(Drupal.settings.cis_lmsless[Drupal.settings.distro]['color'] + '-border');
     // color chips
-    $('.chip, .book-menu-item-active-link').not('.book-parent-tree').addClass(Drupal.settings.cis_lmsless[Drupal.settings.distro]['color'] + ' ' + Drupal.settings.cis_lmsless[Drupal.settings.distro]['light']);
+    $('.book-menu-item-active-link').not('.book-parent-tree').addClass(Drupal.settings.cis_lmsless[Drupal.settings.distro]['color'] + ' ' + Drupal.settings.cis_lmsless[Drupal.settings.distro]['light']);
     // meta property names so mobile reflects system color
     $('meta[name="theme-color"],meta[name="msapplication-TileColor"],meta[name="msapplication-navbutton-color"]').attr('content', $('.cis-lmsless-color').css('backgroundColor'));
     // hover state for tables to match styling
