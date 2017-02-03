@@ -14,36 +14,10 @@ function foundation_access_preprocess_html(&$variables) {
   $variables['iconsizes'] = array('16', '32', '64', '96', '160', '192', '310');
   $variables['appleiconsizes'] = array('60', '72', '76', '114', '120', '144', '152', '180');
   $variables['system_icon'] = $settings['icon'];
+  $variables['lmsless_classes'] = _cis_lmsless_get_distro_classes(elmsln_core_get_profile_key());
   $variables['system_title'] = (isset($settings['default_title']) ? $settings['default_title'] : $variables['distro']);
-  // loop through our system specific colors
-  $colors = array('primary', 'secondary', 'required', 'optional');
-  $css = '';
-  foreach ($colors as $current) {
-    $color = theme_get_setting('foundation_access_' . $current . '_color');
-    // allow other projects to override the FA colors
-    drupal_alter('foundation_access_colors', $color, $current);
-    // see if we have something that could be valid hex
-    if (strlen($color) == 6 || strlen($color) == 3) {
-      $complement = '#' . _foundation_access_complement($color);
-      $color = '#' . $color;
-      $css .= '.foundation_access-' . $current . "_color{color:$color;}";
-      // specialized additions for each wheel value
-      switch ($current) {
-        case 'primary':
-          $css .= ".etb-book h1,.etb-book h2 {color: $color;}";
-        break;
-        case 'secondary':
-          $css .= ".etb-book h3,.etb-book h4,.etb-book h5 {color: $color;}";
-        break;
-        case 'required':
-          $css .= "div.textbook_box_required li:hover:before{border-color: $color;} div.textbook_box_required li:before {color: $complement; background: $color;} div.textbook_box_required { border: 2px solid $color;} .textbook_box_required h3 {color: $color;}";
-        break;
-        case 'optional':
-          $css .= "div.textbook_box_optional li:hover:before{border-color: $color;} div.textbook_box_optional li:before {color: $complement; background: $color;} div.textbook_box_optional { border: 2px solid $color;} .textbook_box_optional h3 {color: $color;}";
-        break;
-      }
-    }
-  }
+  $css = _foundation_access_contextual_colors($variables['lmsless_classes']);
+
   $variables['theme_path'] = base_path() . drupal_get_path('theme', 'foundation_access');
 
   drupal_add_css($css, array('type' => 'inline', 'group' => CSS_THEME, 'weight' => 999));
@@ -52,19 +26,19 @@ function foundation_access_preprocess_html(&$variables) {
   // google font / icons from google
   drupal_add_css('//fonts.googleapis.com/css?family=Material+Icons%7CDroid+Serif:400,700,400italic,700italic%7COpen+Sans:300,600,700', array('type' => 'external', 'group' => CSS_THEME, 'weight' => 1000));
   $libraries = libraries_get_libraries();
-  if (isset($libraries['jquery.vibrate.js'])) {
-    drupal_add_js($libraries['jquery.vibrate.js'] .'/jquery.vibrate.min.js');
-    drupal_add_js(drupal_get_path('theme', 'foundation_access') . '/legacy/js/vibrate-enable.js');
+  if (!_entity_iframe_mode_enabled()) {
+    if (isset($libraries['jquery.vibrate.js'])) {
+      drupal_add_js($libraries['jquery.vibrate.js'] .'/jquery.vibrate.min.js');
+      drupal_add_js(drupal_get_path('theme', 'foundation_access') . '/legacy/js/vibrate-enable.js');
+    }
+    // gifs need to be done as a player for accessibility reasons
+    if (isset($libraries['jquery.vibrate.js'])) {
+      drupal_add_js($libraries['freezeframe.js'] .'/src/js/vendor/imagesloaded.pkgd.js');
+      drupal_add_js($libraries['freezeframe.js'] .'/build/js/freezeframe.js');
+      drupal_add_css($libraries['freezeframe.js'] .'/build/css/freezeframe_styles.min.css');
+      drupal_add_js(drupal_get_path('theme', 'foundation_access') . '/legacy/js/freezeframe-enable.js');
+    }
   }
-  // gifs need to be done as a player for accessibility reasons
-  if (isset($libraries['jquery.vibrate.js'])) {
-    drupal_add_js($libraries['freezeframe.js'] .'/src/js/vendor/imagesloaded.pkgd.js');
-    drupal_add_js($libraries['freezeframe.js'] .'/build/js/freezeframe.js');
-    drupal_add_css($libraries['freezeframe.js'] .'/build/css/freezeframe_styles.min.css');
-    drupal_add_js(drupal_get_path('theme', 'foundation_access') . '/legacy/js/freezeframe-enable.js');
-  }
-  // bring in materialize
-  $libraries = libraries_get_libraries();
   // see if we have it locally before serviing CDN
   // This allows EASY CDN module to switch to CDN later if that's the intention
   if (isset($libraries['materialize'])) {
@@ -83,15 +57,13 @@ function foundation_access_preprocess_html(&$variables) {
     drupal_add_js(drupal_get_path('theme', 'foundation_access') . '/legacy_zurb/js/enable-foundation.js', array('scope' => 'footer', 'weight' => 2000));
   }
   // theme path shorthand should be handled here
-  foreach($variables['user']->roles as $role){
+  foreach ($variables['user']->roles as $role){
     $variables['classes_array'][] = 'role-' . drupal_html_class($role);
   }
   // support for class to render in a modal
   if (isset($_GET['modal'])) {
     $variables['classes_array'][] = 'modal-rendered';
   }
-  // pull in the lmsless classes / colors
-  $variables['lmsless_classes'] = _cis_lmsless_get_distro_classes(elmsln_core_get_profile_key());
   // add page level variables into scope for the html tpl file
   $variables['site_name'] = check_plain(variable_get('site_name', 'ELMSLN'));
   $variables['logo'] = theme_get_setting('logo');
@@ -179,7 +151,7 @@ function foundation_access_fieldset($variables) {
         // form the fieldset as a collapse element
         $output = '
         <li class="collapsible-li">
-          <a id="collapse-item-id-' . $anchor . '" href="#collapse-item-' . $anchor . '" class="collapsible-header waves-effect cis-lmsless-waves' . $collapse . '">' .
+          <a id="collapse-item-id-' . $anchor . '" href="#collapse-item-' . $anchor . '" class="collapsible-header waves-effect cis-lmsless-waves' . $collapse . '"' . drupal_attributes($element['#attributes']) .'>' .
             $icon . $element['#title'] .
           '
           </a>
@@ -684,6 +656,36 @@ function foundation_access_field__field_cis_course_ref($variables) {
 }
 
 /**
+ * Calculate and display duration for external videos when we can.
+ */
+function foundation_access_preprocess_node__inherit__external_video(&$variables) {
+  $elements = &$variables['elements'];
+  // see if we have a usable duration value
+  if (isset($elements['#node']->field_external_media['und'][0]['video_data'])) {
+    // load it up and search
+    $video_data = unserialize($elements['#node']->field_external_media['und'][0]['video_data']);
+    // not everything has an actual duration so double-check
+    if (isset($video_data['duration'])) {
+      $time = ($video_data['duration'] / 60);
+      // convert into hours / minutes
+      $hours = floor($time / 60);
+      $minutes = ceil(fmod($time, 60));
+      $hour_suffix = t('hour');
+      $min_suffix = t('minute');
+      $minute_format = format_plural($minutes, '1 ' . $min_suffix, '@count ' . $min_suffix . 's');
+      if (!empty($hours)) {
+        $hour_format = format_plural($hours, '1 ' . $hour_suffix, '@count ' . $hour_suffix . 's');
+        $duration = format_string('@h, @m', array('@h' => $hour_format, '@m' => $minute_format));
+      }
+      else {
+        $duration = $minute_format;
+      }
+      $variables['duration'] = '<i class="material-icons text-black">access_time</i><em>' . $duration . '</em>';
+    }
+  }
+}
+
+/**
  * Display Inherit External Video
  */
 function foundation_access_preprocess_node__inherit__external_video__mediavideo(&$variables) {
@@ -1005,6 +1007,7 @@ function foundation_access_menu_local_tasks(&$variables) {
  * Implements template_menu_link.
  */
 function foundation_access_menu_link(&$variables) {
+  static $book_active;
   $element = $variables['element'];
   $sub_menu = '';
   $title = check_plain($element['#title']);
@@ -1018,20 +1021,14 @@ function foundation_access_menu_link(&$variables) {
     if ($element['#below']) {
       $element['#localized_options']['attributes']['class'][] = 'has-children';
     }
-    // see if we have a localized override
-    if (isset($element['#localized_options']['fa_icon'])) {
-      $icon = $element['#localized_options']['fa_icon'];
-    }
-    // prefix node based titles with an icon
-    if (isset($icon) && !empty($icon)) {
-      $title = '<div class="elmsln-icon icon-' . $icon . ' outline-nav-icon"></div>' . $title;
-    }
-    else {
-      $title = '<div class="outline-nav-icon"></div>' . $title;
-    }
   }
   // support for add menu to get floating classes
   if ($element['#original_link']['menu_name'] == 'menu-elmsln-add') {
+    // support for passing section context as to what they are looking at currently
+    if (_cis_connector_system_type() != 'service') {
+      $element['#localized_options']['query']['elmsln_course'] = _cis_connector_course_context();
+      $element['#localized_options']['query']['elmsln_section'] = _cis_connector_section_context();
+    }
     $element['#localized_options']['attributes']['class'][] = 'btn-floating';
     $element['#localized_options']['attributes']['class'][] = 'elmsln-btn-floating';
     // load up a map of icons and color associations
@@ -1042,6 +1039,7 @@ function foundation_access_menu_link(&$variables) {
         $element['#localized_options']['attributes']['class'][] = 'elmsln-core-external-context-apply';
       }
       $element['#localized_options']['attributes']['class'][] = $icon_map[$icon]['color'];
+      $element['#localized_options']['attributes']['class'][] = 'darken-3';
       $title = '<i class="material-icons white-text left">' . $icon_map[$icon]['icon'] . '</i>' . $title;
       $element['#localized_options']['html'] = TRUE;
     }
@@ -1052,14 +1050,46 @@ function foundation_access_menu_link(&$variables) {
       $element['#localized_options']['attributes']['class'][] = $lmsless_classes['light'];
     }
   }
-  if ($element['#original_link']['menu_name'] == 'menu-elmsln-navigation') {
+  elseif ($element['#original_link']['menu_name'] == 'menu-elmsln-navigation') {
     $lmsless_classes = _cis_lmsless_get_distro_classes(elmsln_core_get_profile_key());
     $element['#attributes']['class'][] = 'tab';
     $element['#localized_options']['attributes']['class'][] = $lmsless_classes['text'];
     $element['#localized_options']['attributes']['target'] = '_self';
   }
+  elseif (strpos($element['#original_link']['menu_name'], 'book-toc-') === 0) {
+    $element['#attributes']['class'][] = 'elmsln-book-item';
+    if ($element['#original_link']['has_children'] == 1) {
+      $element['#attributes']['class'][] = 'has-children';
+    }
+    elseif (isset($element['#original_link']['options']['fa_icon']) && !empty($element['#original_link']['options']['fa_icon'])) {
+      // overview page renders differently for full screen mode
+      if (current_path() == 'mooc/book-toc') {
+        $element['#localized_options']['attributes']['class'][] = 'icon-' . $element['#original_link']['options']['fa_icon'];
+        $element['#localized_options']['attributes']['class'][] = 'elmsln-icon';
+      }
+      else {
+        $element['#attributes']['class'][] = 'icon-' . $element['#original_link']['options']['fa_icon'];
+        $element['#attributes']['class'][] = 'elmsln-icon';
+      }
+    }
+    // look for active trail being hit in a book
+    if (array_search('active-trail', $element['#attributes']['class'])) {
+      $book_active = TRUE;
+    }
+    // if we haven't set an active page yet then keep claiming we past it
+    if (!isset($book_active)) {
+      $element['#attributes']['class'][] = 'past-page';
+    }
+  }
   $output = l($title, $element['#href'], $element['#localized_options']);
   return '<li' . drupal_attributes($element['#attributes']) . '>' . $output . $sub_menu . "</li>\n";
+}
+
+/**
+ * Implements menu_tree__menu_elmsln_settings.
+ */
+function foundation_access_menu_tree($variables) {
+  return '<ul class="menu">' . $variables['tree'] . '</ul>';
 }
 
 /**
@@ -1114,7 +1144,7 @@ function _foundation_access_single_menu_link($element) {
   if (isset($options['fa_icon'])) {
     $icon = $options['fa_icon'];
   }
-  return '<li>' . l('<div class="elmsln-icon icon-' . $icon . ' outline-nav-icon"></div>' . $title, $element['#href'], $options) . '</li>';
+  return '<li>' . l($title, $element['#href'], $options) . '</li>';
 }
 
 /**
@@ -1181,7 +1211,7 @@ function _foundation_access_menu_outline($variables, $word = FALSE, $number = FA
       $counter++;
     }
     else {
-      $return ='<li class="has-submenu level-' . $depth . '-top ' . implode(' ', $element['#attributes']['class']) . '"><a href="#elmsln-menu-sub-level-' . hash('md5', 'emsl' . $title) . '"><div class="elmsln-icon icon-content outline-nav-icon"></div><span class="outline-nav-text">' . $title . '</span></a>' . "\n" .
+      $return ='<li class="has-submenu level-' . $depth . '-top ' . implode(' ', $element['#attributes']['class']) . '"><a href="#elmsln-menu-sub-level-' . hash('md5', 'emsl' . $title) . '"><span class="outline-nav-text">' . $title . '</span></a>' . "\n" .
       '<ul class="left-submenu level-' . $depth . '-sub">'  . "\n" .
       '<div>'  . "\n";
       $labeltmp = _foundation_access_auto_label_build($word, $number, $counter);
@@ -1710,127 +1740,6 @@ function _foundation_access_svg_whitelist_tags() {
 }
 
 /**
- * Find the complementary color from a hexcode.
- * Assembled from the blog http://www.serennu.com/colour/rgbtohsl.php
- * @param  string $hexcode string that's a 6 digit hex
- * @return string a complementary color that's the inverse of the input.
- */
-function _foundation_access_complement($hexcode) {
-  // account for hex that's only 3 digits
-  if (strlen($hexcode) == 3) {
-    // $hexcode is the six digit hex colour code we want to convert
-    $redhex  = substr($hexcode, 0, 1) . substr($hexcode, 0, 1);
-    $greenhex = substr($hexcode, 1, 1) . substr($hexcode, 1, 1);
-    $bluehex = substr($hexcode, 2, 1) . substr($hexcode, 2, 1);
-  }
-  else {
-    // $hexcode is the six digit hex colour code we want to convert
-    $redhex  = substr($hexcode, 0, 2);
-    $greenhex = substr($hexcode, 2, 2);
-    $bluehex = substr($hexcode, 4, 2);
-  }
-  // $var_r, $var_g and $var_b are the three decimal fractions to be input to our RGB-to-HSL conversion routine
-  $var_r = (hexdec($redhex)) / 255;
-  $var_g = (hexdec($greenhex)) / 255;
-  $var_b = (hexdec($bluehex)) / 255;
-  // Input is $var_r, $var_g and $var_b from above
-  // Output is HSL equivalent as $h, $s and $l — these are again expressed as fractions of 1, like the input values
-
-  $var_min = min($var_r,$var_g,$var_b);
-  $var_max = max($var_r,$var_g,$var_b);
-  $del_max = $var_max - $var_min;
-
-  $l = ($var_max + $var_min) / 2;
-
-  if ($del_max == 0) {
-    $h = 0;
-    $s = 0;
-  }
-  else {
-    if ($l < 0.5) {
-      $s = $del_max / ($var_max + $var_min);
-    }
-    else {
-      $s = $del_max / (2 - $var_max - $var_min);
-    }
-
-    $del_r = ((($var_max - $var_r) / 6) + ($del_max / 2)) / $del_max;
-    $del_g = ((($var_max - $var_g) / 6) + ($del_max / 2)) / $del_max;
-    $del_b = ((($var_max - $var_b) / 6) + ($del_max / 2)) / $del_max;
-
-    if ($var_r == $var_max) {
-      $h = $del_b - $del_g;
-    }
-    elseif ($var_g == $var_max) {
-      $h = (1 / 3) + $del_r - $del_b;
-    }
-    elseif ($var_b == $var_max) {
-      $h = (2 / 3) + $del_g - $del_r;
-    }
-
-    if ($h < 0) {
-      $h += 1;
-    }
-
-    if ($h > 1) {
-      $h -= 1;
-    }
-  }
-  // Calculate the opposite hue, $h2
-  $h2 = $h + 0.5;
-  if ($h2 > 1) {
-    $h2 -= 1;
-  }
-  // Input is HSL value of complementary colour, held in $h2, $s, $l as fractions of 1
-  // Output is RGB in normal 255 255 255 format, held in $r, $g, $b
-  // Hue is converted using function _foundation_access_hue_2_rgb, shown at the end of this code
-  if ($s == 0) {
-    $r = $l * 255;
-    $g = $l * 255;
-    $b = $l * 255;
-  }
-  else {
-    if ($l < 0.5) {
-      $var_2 = $l * (1 + $s);
-    }
-    else {
-      $var_2 = ($l + $s) - ($s * $l);
-    }
-    $var_1 = 2 * $l - $var_2;
-    $r = 255 * _foundation_access_hue_2_rgb($var_1,$var_2,$h2 + (1 / 3));
-    $g = 255 * _foundation_access_hue_2_rgb($var_1,$var_2,$h2);
-    $b = 255 * _foundation_access_hue_2_rgb($var_1,$var_2,$h2 - (1 / 3));
-  }
-  // And after that routine, we finally have $r, $g and $b in 255 255 255 (RGB) format, which we can convert to six digits of hex:
-  $rhex = sprintf("%02X", round($r));
-  $ghex = sprintf("%02X", round($g));
-  $bhex = sprintf("%02X", round($b));
-
-  $rgbhex = $rhex.$ghex.$bhex;
-  return $rgbhex;
-}
-
-// Function to convert hue to RGB, called from above
-function _foundation_access_hue_2_rgb($v1, $v2, $vh) {
-  if ($vh < 0) {
-    $vh += 1;
-  }
-  if ($vh > 1) {
-    $vh -= 1;
-  }
-  if ((6 * $vh) < 1) {
-    return ($v1 + ($v2 - $v1) * 6 * $vh);
-  }
-  if ((2 * $vh) < 1) {
-    return ($v2);
-  }
-  if ((3 * $vh) < 2) {
-    return ($v1 + ($v2 - $v1) * ((2 / 3 - $vh) * 6));
-  }
-  return ($v1);
-};
-
-/**
  * Converts youtube / vimeo URLs into things we can embed
  * @param  string $video_url a well formed youtube/vimeo direct URL.
  * @return string            the address that's valid for embed codes.
@@ -1875,22 +1784,85 @@ function foundation_access_wysiwyg_editor_settings_alter(&$settings, $context) {
   else {
     $settings['contentsCss'][] = '//cdnjs.cloudflare.com/ajax/libs/materialize/' . FOUNDATION_ACCESS_MATERIALIZE_VERSION . '/css/materialize.min.css';
   }
-  if (isset($settings['bodyClass'])) {
-    $settings['bodyClass'] .= ' html logged-in';
+  $lmsless_classes = _cis_lmsless_get_distro_classes(elmsln_core_get_profile_key());
+  $css = _foundation_access_contextual_colors($lmsless_classes);
+  $settings['contentsCss'][] = $css;
+  if (!isset($settings['bodyClass'])) {
+    $settings['bodyClass'] = '';
   }
-  else {
-    $settings['bodyClass'] = ' html logged-in';
+  $settings['bodyClass'] .= ' inner-wrap main-section etb-book elmsln-content-wrap node node node-page node-view-mode-full full html not-front logged-in no-sidebars page-node node-type-page ckeditor-edit-body';
+  foreach ($GLOBALS['user']->roles as $role) {
+    $settings['bodyClass'] .= ' role-' . drupal_html_class($role);
   }
+  // Specify the custom config file that defines our font styles
+  $settings['customConfig'] = base_path() . drupal_get_path('theme', 'foundation_access') . '/ckeditor_custom_config.js';
   // @todo figure out how to make ckeditor wrap this in w/ content editiable to be more accurate CSS application
-  /* cke_editable cke_editable_themed cke_contents_ltr cke_show_borders"><div class="etb-tool-nav" class="off-canvas-wrap">
-  <div class="inner-wrap">
-      <main class="main-section etb-book">
-      <div class="row content-element-region-wrapper">
-            <div class="content-element-region">
-            <div contenteditable="true" class="cke_editable_themed';
+  /* cke_editable cke_editable_themed cke_contents_ltr cke_show_borders">
+    <main id="etb-tool-nav" data-offcanvas>
+      <div class="inner-wrap">
+        <section class="main-section etb-book">
+          <div class="row">
+            <div class="s12 m12 push-l1 l10 col" role="main">
+              <div contenteditable="true" class="cke_editable_themed';
   */
 }
 
+/**
+ * Generate CSS specific to this environment's colorset.
+ */
+function _foundation_access_contextual_colors($lmsless_classes) {
+  // loop through our system specific colors
+  $colors = array('primary', 'secondary', 'required', 'optional');
+  $css = '
+  .pagination li.active,
+  ul.pagination li:hover a, ul.pagination li a:focus, ul.pagination li:hover button, ul.pagination li button:focus {
+    color: ' . $lmsless_classes['code_text'] . ';
+    background-color: ' . $lmsless_classes['code'] . '
+  }
+  .btn,
+  .btn-large {
+    background-color: ' . $lmsless_classes['code_text'] . ';
+  }
+  .dropdown-content li > a, .dropdown-content li > span,
+  form.node-form div.field-group-htabs-wrapper .horizontal-tabs a.fieldset-title,
+  a {
+    color: ' . $lmsless_classes['code_text'] . ';
+  }
+  [type="checkbox"]:checked + label:before {
+    border-right: 2px solid ' . $lmsless_classes['code_text'] . ';
+    border-bottom: 2px solid ' . $lmsless_classes['code_text'] . ';
+  }';
+  foreach ($colors as $current) {
+    $color = theme_get_setting('foundation_access_' . $current . '_color');
+    // allow other projects to override the FA colors
+    drupal_alter('foundation_access_colors', $color, $current);
+    // see if we have something that could be valid hex
+    if (strlen($color) == 6 || strlen($color) == 3) {
+      $color = '#' . $color;
+      $css .= '.foundation_access-' . $current . "_color{color:$color;}";
+      // specialized additions for each wheel value
+      switch ($current) {
+        case 'primary':
+          $css .= ".etb-book h1,.etb-book h2 {color: $color;}";
+        break;
+        case 'secondary':
+          $css .= ".etb-book h3,.etb-book h4,.etb-book h5 {color: $color;}";
+        break;
+        case 'required':
+          $css .= "div.textbook_box_required li:hover:before{border-color: $color;} div.textbook_box_required li:before {background: $color;} div.textbook_box_required { border: 2px solid $color;} .textbook_box_required h3 {color: $color;}";
+        break;
+        case 'optional':
+          $css .= "div.textbook_box_optional li:hover:before{border-color: $color;} div.textbook_box_optional li:before {background: $color;} div.textbook_box_optional { border: 2px solid $color;} .textbook_box_optional h3 {color: $color;}";
+        break;
+      }
+    }
+  }
+  return $css;
+}
+
+/**
+ * Return the tabbed items to shift items into the ... menu.
+ */
 function _foundation_access_move_tabs() {
   $tabs = array(
     'node/%/display',
