@@ -51,6 +51,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <!--cross platform favicons and tweaks-->
   <link rel="shortcut icon" href="<?php print $favicon_path;?>">
+<?php if ($theme_path . '/legacy/icons/elmsicons/elmsln.ico' == $favicon_path) : ?>
   <link rel="icon" sizes="16x16 32x32 64x64" href="<?php print $theme_path . '/legacy/icons/elmsicons';?>/elmsln.ico">
 <?php foreach ($iconsizes as $iconsize) : ?>
   <link rel="icon" type="image/png" sizes="<?php print $iconsize; ?>x<?php print $iconsize; ?>" href="<?php print $theme_path . '/legacy/icons/elmsicons';?>/elmsln-<?php print $iconsize; ?>.png">
@@ -67,6 +68,7 @@
   <!-- Windows Phone -->
   <meta name="msapplication-TileImage" content="<?php print $theme_path . '/legacy/icons/elmsicons';?>/elmsln-144.png">
   <meta name="msapplication-config" content="<?php print $theme_path . '/legacy/icons/elmsicons';?>/browserconfig.xml">
+<?php endif; ?>
   <meta name="msapplication-tap-highlight" content="no">
   <!-- Chrome, Firefox OS and Opera -->
   <meta name="msapplication-navbutton-color" content="#eeeeee">
@@ -85,28 +87,28 @@
   </div>
   <?php if (!empty($banner_image)) : ?>
   <div class="header-image-container">
-    <?php print $banner_image; ?>
-  </div>
-  <?php endif; ?>
+  <?php if ($install_profile != 'mooc') : ?>
     <div class="elmsln-system-badge">
-      <div class="elmsln-icon icon-<?php print $system_icon . ' ' . $lmsless_classes['text'];?> elmsln-badge"></div>
+      <div class="elmsln-icon icon-<?php print $system_icon;?> white-text elmsln-badge"></div>
       <div class="elmsln-badge-inner">
-        <div class="elmsln-badge-top white-border"></div>
-        <div class="elmsln-badge-middle white"></div>
-        <div class="elmsln-badge-bottom white-border"></div>
-      </div>
-      <div class="elmsln-badge-outer">
-        <div class="elmsln-badge-top <?php print $lmsless_classes['color'];?>-border"></div>
         <div class="elmsln-badge-middle <?php print $lmsless_classes['color'];?>"></div>
         <div class="elmsln-badge-bottom <?php print $lmsless_classes['color'];?>-border"></div>
       </div>
-      <div class="elmsln-badge-middle-name white <?php print $lmsless_classes['color'];?>-border">
-        <a href="<?php print base_path();?>" class="<?php print $lmsless_classes['text'];?> <?php print $lmsless_classes['color'];?>-outline">
+      <div class="elmsln-badge-outer">
+        <div class="elmsln-badge-middle white"></div>
+        <div class="elmsln-badge-bottom white-border"></div>
+      </div>
+      <div class="elmsln-badge-middle-name <?php print $lmsless_classes['color'];?> white-border">
+        <a href="<?php print base_path();?>" class="<?php print $lmsless_classes['color'];?> white-text white-outline">
           <span class="element-invisible"><?php print t('Home');?></span>
           <?php print $system_title;?>
         </a>
       </div>
     </div>
+  <?php endif; ?>
+    <?php print $banner_image; ?>
+  </div>
+  <?php endif; ?>
   <?php print preg_replace('~>\s+<~', '><', $page_top . $page . $page_bottom); ?>
   </body>
 </html>

@@ -25,9 +25,7 @@
         <section class="main-section etb-book">
           <div class="r-header row">
             <div class="r-header__left">
-              <div class="col s12">
-                <?php print render($page['header']); ?>
-              </div>
+              <?php print render($page['header']); ?>
             </div>
             <div class="r-header__right">
               <h2 class="element-invisible"><?php print t('Primary tabs');?></h2>
@@ -94,10 +92,10 @@
             </div>
           </div>
           <?php if ($contentwrappers): ?>
-          <div class="row">
+          <div class="elmsln-content-wrap row">
             <div class="s12 m12 push-l1 l10 col" role="main">
           <?php else : ?>
-          <div>
+          <div class="elmsln-content-wrap">
             <div role="main">
           <?php endif; ?>
               <?php if (!empty($page['highlighted'])): ?>
@@ -131,19 +129,21 @@
                   <?php endif; ?>
                 </div>
               <?php endif; ?>
+              <div class="push-s1 s10 col">
               <?php if ($title && arg(0) != 'node'): ?>
                 <?php print render($title_prefix); ?>
-                  <h2 id="page-title" class="title"><?php print $title; ?></h2>
+                <h2 id="page-title" class="title"><?php print $title; ?></h2>
                 <?php print render($title_suffix); ?>
               <?php endif; ?>
               <?php print render($page['content']); ?>
+              </div>
             </div>
           </div>
         </section>
       <a class="exit-off-canvas"></a>
       </div>
     </main>
-    <footer class="page-footer <?php print $cis_lmsless['lmsless_classes'][$distro]['color'] . ' ' . $cis_lmsless['lmsless_classes'][$distro]['light'];?>">
+    <footer class="page-footer <?php print $cis_lmsless['lmsless_classes'][$distro]['color'] . ' ' . $cis_lmsless['lmsless_classes'][$distro]['light'] . ' ' . $cis_lmsless['lmsless_classes'][$distro]['color'];?>-border <?php print $cis_lmsless['lmsless_classes'][$distro]['text'];?>">
       <div class="container">
         <div class="row">
           <div class="s12 push-m1 m-10 col">

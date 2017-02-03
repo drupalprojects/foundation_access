@@ -26,8 +26,8 @@
  */
 // sort so the items are weighted
 ?>
-<div class="fixed-action-btn elmsln-fixed-action-btn click-to-toggle" style="bottom: 45px; right: 24px;">
-  <a href="#add-button" class="btn-floating btn-large <?php print $lmsless_classes['color']; ?>" tabindex="0" aria-label="<?php print t('Add content'); ?>">
+<div class="fixed-action-btn elmsln-fixed-action-btn click-to-toggle" style="bottom: 2rem; right: 1rem;">
+  <a href="#add-button" class="z-depth-2 btn-floating btn-large <?php print $lmsless_classes['color']; ?> <?php print $lmsless_classes['dark']; ?>" tabindex="0" aria-label="<?php print t('Add content'); ?>">
     <i class="material-icons">add</i>
   </a>
   <?php if ($content): ?>
